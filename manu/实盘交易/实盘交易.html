@@ -1,0 +1,241 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+</head>
+<body>
+<div itemprop="articleBody">
+<section id="id1">
+<h1>实盘交易<a class="headerlink" href="#id1" title="Permalink to this heading"></a></h1>
+<p>程序化交易也就是自动化交易，也就是大家常见的各种量化框架，本质就是任务的定时调度 + 通知回调。</p>
+<p>Hikyuu 主要聚焦于快速策略分析，本身不提供实盘交易，Strategy 运行时仅供大家学习参考如何和实盘进行对接，造成盈亏请自行负责。</p>
+<p>具体可参见安装目录下的 strategy 子目录下的相关 demo。</p>
+<p>公共参数：</p>
+<blockquote>
+<div><ul class="simple">
+<li><p><strong>spot_worker_num=1</strong> <em>(int)</em> : 接收行情数据时内部的线程数</p></li>
+<li><p><strong>quotation_server=””</strong> <em>(string)</em> : 指定行情服务地址，为空表示使用本机默认配置（hikyuu.ini）</p></li>
+</ul>
+</div></blockquote>
+<dl class="py class">
+<dt class="sig sig-object py" id="hikyuu.Strategy">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">hikyuu.</span></span><span class="sig-name descname"><span class="pre">Strategy</span></span><a class="headerlink" href="#hikyuu.Strategy" title="永久链接至目标"></a></dt>
+<dd><p>策略运行时</p>
+<dl class="py attribute">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">name</span> <span class="pre">名称</span></span></dt>
+<dd></dd></dl>
+<dl class="py attribute">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">context</span> <span class="pre">策略上下文</span></span></dt>
+<dd></dd></dl>
+<dl class="py attribute">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">tm</span> <span class="pre">当前交易账户</span></span></dt>
+<dd></dd></dl>
+<dl class="py attribute">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">sp</span> <span class="pre">移滑价差算法（回测时使用）</span></span></dt>
+<dd></dd></dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="hikyuu.Strategy.start">
+<span class="sig-name descname"><span class="pre">start</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#hikyuu.Strategy.start" title="永久链接至目标"></a></dt>
+<dd><p>启动策略执行，请在完成相关回调设置后执行。</p>
+<dl class="field-list simple">
+<dt class="field-odd">参数<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>auto_recieve_spot</strong> (<em>bool</em>) – 是否自动接收行情数据</p>
+</dd>
+</dl>
+</dd></dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="hikyuu.Strategy.on_change">
+<span class="sig-name descname"><span class="pre">on_change</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">func</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#hikyuu.Strategy.on_change" title="永久链接至目标"></a></dt>
+<dd><p>设置证券数据更新回调通知</p>
+<dl class="field-list simple">
+<dt class="field-odd">参数<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>func</strong> – 一个可调用的对象如普通函数，需接收 stock 和 ktype 参数</p>
+</dd>
+</dl>
+</dd></dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="hikyuu.Strategy.on_received_spot">
+<span class="sig-name descname"><span class="pre">on_received_spot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">func</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#hikyuu.Strategy.on_received_spot" title="永久链接至目标"></a></dt>
+<dd><p>设置证券数据更新通知回调</p>
+<dl class="field-list simple">
+<dt class="field-odd">参数<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>func</strong> – 可调用对象如普通函数，没有参数</p>
+</dd>
+</dl>
+</dd></dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="hikyuu.Strategy.run_daily">
+<span class="sig-name descname"><span class="pre">run_daily</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">func</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#hikyuu.Strategy.run_daily" title="永久链接至目标"></a></dt>
+<dd><p>设置日内循环执行回调。如果忽略市场开闭市，则自启动时刻开始按间隔时间循环，
+否则第一次执行时将开盘时间对齐时间间隔，且在非开市时间停止执行。</p>
+<dl class="field-list simple">
+<dt class="field-odd">参数<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>func</strong> – 可调用对象如普通函数，没有参数</p></li>
+<li><p><strong>time</strong> (<a class="reference internal" href="base/datatype.html#hikyuu.TimeDelta" title="hikyuu.TimeDelta"><em>TimeDelta</em></a>) – 间隔时间，如间隔3秒：TimeDelta(0, 0, 0, 3) 或 Seconds(3)</p></li>
+<li><p><strong>market</strong> (<em>str</em>) – 使用哪个市场的开闭市时间</p></li>
+<li><p><strong>ignore_market</strong> – 忽略市场开闭市时间</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="hikyuu.Strategy.run_daily_at">
+<span class="sig-name descname"><span class="pre">run_daily_at</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">func</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#hikyuu.Strategy.run_daily_at" title="永久链接至目标"></a></dt>
+<dd><p>设置每日定点执行回调</p>
+<dl class="field-list simple">
+<dt class="field-odd">参数<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>func</strong> – 可调用对象如普通函数，没有参数</p></li>
+<li><p><strong>time</strong> (<a class="reference internal" href="base/datatype.html#hikyuu.TimeDelta" title="hikyuu.TimeDelta"><em>TimeDelta</em></a>) – 执行时刻，如每日15点：TimeDelta(0, 15)</p></li>
+<li><p><strong>ignore_holiday</strong> – 节假日不执行</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="hikyuu.Strategy.today">
+<span class="sig-name descname"><span class="pre">today</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#hikyuu.Strategy.today" title="永久链接至目标"></a></dt>
+<dd><p>获取当前交易日日期（使用该方法而不是 Datatime.today(), 以便回测和实盘一直）</p>
+<dl class="field-list simple">
+<dt class="field-odd">返回<span class="colon">:</span></dt>
+<dd class="field-odd"><p>当前交易日日期</p>
+</dd>
+</dl>
+</dd></dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="hikyuu.Strategy.now">
+<span class="sig-name descname"><span class="pre">now</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#hikyuu.Strategy.now" title="永久链接至目标"></a></dt>
+<dd><p>获取当前时间（使用该方法而不是 Datatime.now(), 以便回测和实盘一直）</p>
+<dl class="field-list simple">
+<dt class="field-odd">返回<span class="colon">:</span></dt>
+<dd class="field-odd"><p>当前时间</p>
+</dd>
+</dl>
+</dd></dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="hikyuu.Strategy.next_datetime">
+<span class="sig-name descname"><span class="pre">next_datetime</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#hikyuu.Strategy.next_datetime" title="永久链接至目标"></a></dt>
+<dd><p>下一交易时间点（回测使用）</p>
+</dd></dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="hikyuu.Strategy.get_last_kdata">
+<span class="sig-name descname"><span class="pre">get_last_kdata</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stk</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">start_date</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ktype</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">recover_type</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#hikyuu.Strategy.get_last_kdata" title="永久链接至目标"></a></dt>
+<dd><p>获取指定证券从指定日期开始到当前时间的对应K线数据(为保证实盘和回测一致，请使用本方法获取K线数据)</p>
+<p>或 指定当前能获取到的最后 last_num 条 K线数据(为保证实盘和回测一致，请使用本方法获取K线数据)</p>
+<dl class="field-list simple">
+<dt class="field-odd">参数<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>stk</strong> (<a class="reference internal" href="stock_manager.html#hikyuu.Stock" title="hikyuu.Stock"><em>Stock</em></a>) – 指定的证券</p></li>
+<li><p><strong>start_date</strong> (<a class="reference internal" href="base/datatype.html#hikyuu.Datetime" title="hikyuu.Datetime"><em>Datetime</em></a>) – 开始日期  (或为 int 类型，表示从当前日期往前推多少个交易日)</p></li>
+<li><p><strong>ktype</strong> (<em>KQuery.KType</em>) – K线类型</p></li>
+<li><p><strong>recover_type</strong> (<em>KQuery.RecoverType</em>) – 恢复方式</p></li>
+</ul>
+</dd>
+<dt class="field-even">返回<span class="colon">:</span></dt>
+<dd class="field-even"><p>K线数据</p>
+</dd>
+<dt class="field-odd">返回类型<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="base/datatype.html#hikyuu.KData" title="hikyuu.KData">KData</a></p>
+</dd>
+</dl>
+</dd></dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="hikyuu.Strategy.get_kdata">
+<span class="sig-name descname"><span class="pre">get_kdata</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stk</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">start_date</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">end_date</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ktype</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">recover_type</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#hikyuu.Strategy.get_kdata" title="永久链接至目标"></a></dt>
+<dd><p>获取指定证券指定日期范围内的K线数据(为保证实盘和回测一致，请使用本方法获取K线数据)</p>
+<dl class="field-list simple">
+<dt class="field-odd">参数<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>stk</strong> (<a class="reference internal" href="stock_manager.html#hikyuu.Stock" title="hikyuu.Stock"><em>Stock</em></a>) – 指定的证券</p></li>
+<li><p><strong>start_date</strong> (<a class="reference internal" href="base/datatype.html#hikyuu.Datetime" title="hikyuu.Datetime"><em>Datetime</em></a>) – 开始日期</p></li>
+<li><p><strong>end_date</strong> (<a class="reference internal" href="base/datatype.html#hikyuu.Datetime" title="hikyuu.Datetime"><em>Datetime</em></a>) – 结束日期</p></li>
+<li><p><strong>ktype</strong> (<em>KQuery.KType</em>) – K线类型</p></li>
+<li><p><strong>recover_type</strong> (<em>KQuery.RecoverType</em>) – 恢复方式</p></li>
+</ul>
+</dd>
+<dt class="field-even">返回<span class="colon">:</span></dt>
+<dd class="field-even"><p>K线数据</p>
+</dd>
+<dt class="field-odd">返回类型<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="base/datatype.html#hikyuu.KData" title="hikyuu.KData">KData</a></p>
+</dd>
+</dl>
+</dd></dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="hikyuu.Strategy.order">
+<span class="sig-name descname"><span class="pre">order</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stk</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">remark</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#hikyuu.Strategy.order" title="永久链接至目标"></a></dt>
+<dd><p>按数量下单（正数为买入，负数为卖出）</p>
+<dl class="field-list simple">
+<dt class="field-odd">参数<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>stk</strong> (<a class="reference internal" href="stock_manager.html#hikyuu.Stock" title="hikyuu.Stock"><em>Stock</em></a>) – 指定的证券</p></li>
+<li><p><strong>num</strong> (<em>int</em>) – 下单数量</p></li>
+<li><p><strong>remark</strong> (<em>str</em>) – 下单备注</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="hikyuu.Strategy.order_value">
+<span class="sig-name descname"><span class="pre">order_value</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stk</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">value</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">remark</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#hikyuu.Strategy.order_value" title="永久链接至目标"></a></dt>
+<dd><p>按预期的证劵市值下单，即希望买入多少钱的证券（正数为买入，负数为卖出）</p>
+<dl class="field-list simple">
+<dt class="field-odd">参数<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>stk</strong> (<a class="reference internal" href="stock_manager.html#hikyuu.Stock" title="hikyuu.Stock"><em>Stock</em></a>) – 指定的证券</p></li>
+<li><p><strong>value</strong> (<em>float</em>) – 投入买入资金</p></li>
+<li><p><strong>remark</strong> (<em>str</em>) – 下单备注</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+</dd></dl>
+<dl class="py function">
+<dt class="sig sig-object py" id="hikyuu.start_spot_agent">
+<span class="sig-prename descclassname"><span class="pre">hikyuu.</span></span><span class="sig-name descname"><span class="pre">start_spot_agent</span></span><span class="sig-paren">(</span><span class="optional">[</span><em class="sig-param"><span class="n"><span class="pre">print=False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">worker_num=1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">addr=""</span></span></em><span class="optional">]</span><span class="sig-paren">)</span><a class="headerlink" href="#hikyuu.start_spot_agent" title="永久链接至目标"></a></dt>
+<dd><p>启动行情数据接收代理</p>
+<dl class="field-list simple">
+<dt class="field-odd">参数<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>print</strong> – 是否打印日志</p></li>
+<li><p><strong>worker_num</strong> – 工作线程数</p></li>
+<li><p><strong>addr</strong> – 行情采集服务地址</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+<dl class="py function">
+<dt class="sig sig-object py" id="hikyuu.stop_spot_agent">
+<span class="sig-prename descclassname"><span class="pre">hikyuu.</span></span><span class="sig-name descname"><span class="pre">stop_spot_agent</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#hikyuu.stop_spot_agent" title="永久链接至目标"></a></dt>
+<dd><p>停止行情数据接收代理</p>
+</dd></dl>
+<dl class="py function">
+<dt class="sig sig-object py" id="hikyuu.spot_agent_is_running">
+<span class="sig-prename descclassname"><span class="pre">hikyuu.</span></span><span class="sig-name descname"><span class="pre">spot_agent_is_running</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#hikyuu.spot_agent_is_running" title="永久链接至目标"></a></dt>
+<dd><p>行情数据接收代理是否正在运行</p>
+<dl class="field-list simple">
+<dt class="field-odd">返回<span class="colon">:</span></dt>
+<dd class="field-odd"><p>True or False</p>
+</dd>
+</dl>
+</dd></dl>
+<dl class="py function">
+<dt class="sig sig-object py" id="hikyuu.spot_agent_is_connected">
+<span class="sig-prename descclassname"><span class="pre">hikyuu.</span></span><span class="sig-name descname"><span class="pre">spot_agent_is_connected</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#hikyuu.spot_agent_is_connected" title="永久链接至目标"></a></dt>
+<dd><p>行情数据接收代理是否已连接</p>
+<dl class="field-list simple">
+<dt class="field-odd">返回<span class="colon">:</span></dt>
+<dd class="field-odd"><p>True or False</p>
+</dd>
+</dl>
+</dd></dl>
+</section>
+</div>
+</body>
+</html>

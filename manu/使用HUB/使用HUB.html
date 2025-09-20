@@ -1,0 +1,175 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+</head>
+<body>
+<div itemprop="articleBody">
+<section id="hub">
+<h1>使用HUB<a class="headerlink" href="#hub" title="Permalink to this heading"></a></h1>
+<p>HUB 指的是量化交易策略部件的平台，用于：</p>
+<ol class="arabic simple">
+<li><p>存储策略：策略仓库为用户提供了一个集中的地方来存储和管理的量化交易策略。这些策略可能包括各种投资逻辑、交易规则、风险控制措施等。</p></li>
+<li><p>共享与学习：大家可以在策略仓库中分享策略，供他人用户学习和借鉴，共同进步。</p></li>
+<li><p>个人策略积累和管理：处理公共的 hikyuu_hub 外，可以自行搭建自己的策略仓库。通过加入本地目录做仓库，个人可以更加灵活地管理和控制自己的策略库。比如，通过不同的仓库来管理 alpha_101, alpha_36 等不同的因子库。</p></li>
+<li><p>仓库版本管理：本地策略库仅仅为本地的目录，可以选择使用 git 进行版本管理。比如，公共的 hikyuu_hub 库就是使用 git 进行管理。</p></li>
+<li><p>仓库中的策略部件同时支持 python 和 C++ 编写，可以避免直接修改 hikyuu 源码来添加新功能。</p></li>
+</ol>
+<p>有关 HUB 的详细使用, 参见: <a class="reference external" href="https://mp.weixin.qq.com/s/4oh9DEEUkv1gk4KoCcGhtQ">Hikyuu | 量化交易策略部件仓库使用说明</a></p>
+<dl class="py function">
+<dt class="sig sig-object py" id="add_remote_hub">
+<span class="sig-name descname"><span class="pre">add_remote_hub</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">url</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">branch</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'main'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#add_remote_hub" title="永久链接至目标"></a></dt>
+<dd><p>增加远程策略仓库</p>
+<dl class="field-list simple">
+<dt class="field-odd">参数<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>name</strong> (<em>str</em>) – 本地仓库名称（自行起名）</p></li>
+<li><p><strong>url</strong> (<em>str</em>) – git 仓库地址</p></li>
+<li><p><strong>branch</strong> (<em>str</em>) – git 仓库分支</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+<dl class="py function">
+<dt class="sig sig-object py" id="add_local_hub">
+<span class="sig-name descname"><span class="pre">add_local_hub</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#add_local_hub" title="永久链接至目标"></a></dt>
+<dd><p>增加本地策略仓库</p>
+<dl class="field-list simple">
+<dt class="field-odd">参数<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>name</strong> (<em>str</em>) – 本地仓库名称（自行起名）</p></li>
+<li><p><strong>path</strong> (<em>str</em>) – 本地仓库路径</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+<dl class="py function">
+<dt class="sig sig-object py" id="update_hub">
+<span class="sig-name descname"><span class="pre">update_hub</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#update_hub" title="永久链接至目标"></a></dt>
+<dd><p>更新策略仓库</p>
+<dl class="field-list simple">
+<dt class="field-odd">参数<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>name</strong> (<em>str</em>) – 仓库名称</p>
+</dd>
+</dl>
+</dd></dl>
+<dl class="py function">
+<dt class="sig sig-object py" id="remove_hub">
+<span class="sig-name descname"><span class="pre">remove_hub</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#remove_hub" title="永久链接至目标"></a></dt>
+<dd><p>删除策略仓库</p>
+<dl class="field-list simple">
+<dt class="field-odd">参数<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>name</strong> (<em>str</em>) – 仓库名称</p>
+</dd>
+</dl>
+</dd></dl>
+<dl class="py function">
+<dt class="sig sig-object py" id="get_hub_name_list">
+<span class="sig-name descname"><span class="pre">get_hub_name_list</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#get_hub_name_list" title="永久链接至目标"></a></dt>
+<dd><p>获取策略仓库名称列表</p>
+<dl class="field-list simple">
+<dt class="field-odd">返回<span class="colon">:</span></dt>
+<dd class="field-odd"><p>仓库列表</p>
+</dd>
+<dt class="field-even">返回类型<span class="colon">:</span></dt>
+<dd class="field-even"><p>list</p>
+</dd>
+</dl>
+</dd></dl>
+<dl class="py function">
+<dt class="sig sig-object py" id="get_hub_path">
+<span class="sig-name descname"><span class="pre">get_hub_path</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#get_hub_path" title="永久链接至目标"></a></dt>
+<dd><p>获取策略仓库路径</p>
+<dl class="field-list simple">
+<dt class="field-odd">参数<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>name</strong> (<em>str</em>) – 仓库名称</p>
+</dd>
+</dl>
+</dd></dl>
+<dl class="py function">
+<dt class="sig sig-object py" id="get_current_hub">
+<span class="sig-name descname"><span class="pre">get_current_hub</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#get_current_hub" title="永久链接至目标"></a></dt>
+<dd><p>用于在仓库part.py中获取当前所在的仓库名。</p>
+<p>示例： get_current_hub(__file__)</p>
+<dl class="field-list simple">
+<dt class="field-odd">返回<span class="colon">:</span></dt>
+<dd class="field-odd"><p>仓库名称</p>
+</dd>
+<dt class="field-even">返回类型<span class="colon">:</span></dt>
+<dd class="field-even"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+<dl class="py function">
+<dt class="sig sig-object py" id="get_part">
+<span class="sig-name descname"><span class="pre">get_part</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#get_part" title="永久链接至目标"></a></dt>
+<dd><p>获取策略部件</p>
+<dl class="field-list simple">
+<dt class="field-odd">参数<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>name</strong> (<em>str</em>) – 策略部件名称</p></li>
+<li><p><strong>args</strong> – 策略部件参数</p></li>
+<li><p><strong>kwargs</strong> – 策略部件参数</p></li>
+</ul>
+</dd>
+<dt class="field-even">返回<span class="colon">:</span></dt>
+<dd class="field-even"><p>策略部件实例</p>
+</dd>
+<dt class="field-odd">返回类型<span class="colon">:</span></dt>
+<dd class="field-odd"><p>object</p>
+</dd>
+</dl>
+</dd></dl>
+<dl class="py function">
+<dt class="sig sig-object py" id="get_part_name_list">
+<span class="sig-name descname"><span class="pre">get_part_name_list</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hub</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">part_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#get_part_name_list" title="永久链接至目标"></a></dt>
+<dd><p>获取策略部件名称列表</p>
+<dl class="field-list simple">
+<dt class="field-odd">参数<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>name</strong> (<em>str</em>) – 仓库名称</p></li>
+<li><p><strong>part_type</strong> (<em>str</em>) – 部件类型</p></li>
+</ul>
+</dd>
+<dt class="field-even">返回<span class="colon">:</span></dt>
+<dd class="field-even"><p>策略部件名称列表</p>
+</dd>
+<dt class="field-odd">返回类型<span class="colon">:</span></dt>
+<dd class="field-odd"><p>list</p>
+</dd>
+</dl>
+</dd></dl>
+<dl class="py function">
+<dt class="sig sig-object py" id="help_part">
+<span class="sig-name descname"><span class="pre">help_part</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#help_part" title="永久链接至目标"></a></dt>
+<dd><p>获取策略部件帮助信息</p>
+<dl class="field-list simple">
+<dt class="field-odd">参数<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>name</strong> (<em>str</em>) – 部件名称</p>
+</dd>
+</dl>
+</dd></dl>
+<dl class="py function">
+<dt class="sig sig-object py" id="search_part">
+<span class="sig-name descname"><span class="pre">search_part</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hub</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">part_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">label</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#search_part" title="永久链接至目标"></a></dt>
+<dd><p>搜索策略部件</p>
+<p>示例: search_part(‘趋势’)</p>
+<dl class="field-list simple">
+<dt class="field-odd">参数<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>name</strong> (<em>str</em>) – 部件名称</p></li>
+<li><p><strong>hub</strong> (<em>str</em>) – 仓库名称</p></li>
+<li><p><strong>part_type</strong> (<em>str</em>) – 部件类型</p></li>
+<li><p><strong>label</strong> (<em>str</em>) – 标签</p></li>
+</ul>
+</dd>
+<dt class="field-even">返回<span class="colon">:</span></dt>
+<dd class="field-even"><p>策略部件名称列表</p>
+</dd>
+</dl>
+</dd></dl>
+</section>
+</div>
+</body>
+</html>

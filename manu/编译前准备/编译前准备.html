@@ -1,0 +1,113 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+</head>
+<body>
+<div itemprop="articleBody">
+<div class="admonition note">
+<p class="admonition-title">备注</p>
+<p>为了顺利编译代码， 请勿使用从 github 直接下载源码包的方式编译。 原因是 git 上传时部分文件的换行符被置换为Linux式的换行符，将导致直接下载的部分代码在Windows下无法顺利编译。</p>
+</div>
+<p>C++ API参考, 使用下面的命令生成 Doxygen 文档:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>xmake<span class="w"> </span>doxygen<span class="w"> </span>-F<span class="w"> </span>hikyuu_cpp/Doxygen
+</pre></div>
+</div>
+<section id="developer">
+<span id="id1"></span><h1>编译前准备<a class="headerlink" href="#developer" title="Permalink to this heading"></a></h1>
+<section id="c">
+<h2>1、安装C++编译器<a class="headerlink" href="#c" title="Permalink to this heading"></a></h2>
+<ul class="simple">
+<li><p>Windows 平台：Visual C++ 2017 (或以上）</p></li>
+<li><p>Linux 平台: g++ &gt; = 5.4.0 、 clang++ &gt;= 3.8.0</p></li>
+</ul>
+</section>
+<section id="xmake">
+<h2>2、安装构建工具 xmake<a class="headerlink" href="#xmake" title="Permalink to this heading"></a></h2>
+<p>xmake &gt;= 2.8.2，网址：<a class="reference external" href="https://github.com/xmake-io/xmake">https://github.com/xmake-io/xmake</a></p>
+<p>参见：<a class="reference external" href="https://xmake.io/#/zh-cn/guide/installation">https://xmake.io/#/zh-cn/guide/installation</a> <cite>&lt;https://xmake.io/#/zh-cn/guide/installation&gt;</cite></p>
+</section>
+<section id="hikyuu">
+<h2>3、克隆 Hikyuu 源码<a class="headerlink" href="#hikyuu" title="Permalink to this heading"></a></h2>
+<p>执行以下命令克隆 hikyuu 源码：（请勿在中文目录下克隆代码）</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/fasiondog/hikyuu.git
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">备注</p>
+<p>捐赠用户如本地环境已激活（或申请了使用许可且尚未过期）, 请 checkout 已发布的版本分支，并手工从 <a class="reference external" href="https://gitee.com/hikyuu-quant/hikyuu_plugin_download">https://gitee.com/hikyuu-quant/hikyuu_plugin_download</a>  下载对应版本的插件。</p>
+<p>插件下载后保存在源码 hikyuu/plugin 目录下。</p>
+</div>
+</section>
+<section id="linux">
+<h2>4、Linux下安装依赖软件包<a class="headerlink" href="#linux" title="Permalink to this heading"></a></h2>
+<p>Linux下需安装依赖的开发软件包。如 Ubuntu 下，执行以下命令：</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>sudo<span class="w"> </span>apt-get<span class="w"> </span>install<span class="w"> </span>-y<span class="w"> </span>libsqlite3-dev
+</pre></div>
+</div>
+</section>
+<section id="macosx-xcode">
+<h2>6、Macosx 下安装 xcode 命令行工具<a class="headerlink" href="#macosx-xcode" title="Permalink to this heading"></a></h2>
+<p>编译前请安装 xcode 及其命令行工具。</p>
+</section>
+</section>
+<section id="id2">
+<h1>编译与安装<a class="headerlink" href="#id2" title="Permalink to this heading"></a></h1>
+<section id="python">
+<h2>1. 安装 python 依赖包<a class="headerlink" href="#python" title="Permalink to this heading"></a></h2>
+<p>编译需要 click。 如果下述安装依赖时, 无法安装 PyQt5 的, 可手工删除 requirements.txt 中的 PyQt5 后再继续安装依赖。</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>-r<span class="w"> </span>requirements.txt
+</pre></div>
+</div>
+</section>
+<section id="id3">
+<h2>2. 编译<a class="headerlink" href="#id3" title="Permalink to this heading"></a></h2>
+<p>进入源码目录下，执行 python setup.py build -j 10 , 其他支持的 command：</p>
+<ul class="simple">
+<li><p>python setup.py help        – 查看帮助</p></li>
+<li><p>python setup.py build       – 执行编译</p></li>
+<li><p>python setup.py install     – 编译并执行安装（安装到 python 的 site-packages 目录下）</p></li>
+<li><p>python setup.py uninstall   – 删除已安装的Hikyuu</p></li>
+<li><p>python setup.py test        – 执行单元测试（可带参数 –compile=1，先执行编译）</p></li>
+<li><p>python setup.py clear       – 清除本地编译结果</p></li>
+<li><p>python setup.py wheel       – 生成wheel安装包</p></li>
+</ul>
+<p>各命令参数，可以 执行 python setup.py commond –help 查看, 如: python setup.py build –help</p>
+</section>
+<section id="pythonpath">
+<h2>3. 设置 PYTHONPATH 环境变量<a class="headerlink" href="#pythonpath" title="Permalink to this heading"></a></h2>
+<p>Linux 下如修改 ~/.bashrc 文件，在末尾添加如下内容 （指向源码目录） ：</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="nb">export</span><span class="w"> </span><span class="nv">PYTHONPATH</span><span class="o">=</span>/path/to/hikyuu:<span class="nv">$PYTHONPATH</span>
+</pre></div>
+</div>
+</section>
+<section id="windows-visual-studio">
+<h2>4、Windows 下转 Visual Studio 工程<a class="headerlink" href="#windows-visual-studio" title="Permalink to this heading"></a></h2>
+<p>请先使用 python setup.py build 直接编译过一次后，在转换。</p>
+<p>Windows 下，习惯用 msvc 调试的，可以使用  xmake project -k vsxmake -m “debug,release” 命令生成 VS 工程。命令执行后，会在当前目录下生成如 vsxmake2022 的子目录，VS工程位于其内。</p>
+<p>在 VS 内，可以将 demo 设为启动工程，进行调试。</p>
+</section>
+<section id="macosx">
+<h2>5、Macosx 下编译注意事项<a class="headerlink" href="#macosx" title="Permalink to this heading"></a></h2>
+<p>mac 下 conda 编译：</p>
+<ol class="arabic simple">
+<li><p>base 环境下 python setup.py build -j 10</p></li>
+<li><p>切换到需要的虚拟环境下，不要用 python setup.py build 去编译，直接执行 xmake -b core 编译</p></li>
+<li><p>切回 base 环境，重新执行 xmake -b core</p></li>
+<li><p>再切换至虚拟环境，python3 -m pip install -r requirements.txt</p></li>
+<li><p>导入环境变量，如：export PYTHONPATH=”path/to/hikyuu:$PYTHONPATH”</p></li>
+</ol>
+<p>就可以用了（不要再执行 xmake -b core, 只要在虚拟环境下 xmake -b core 了，都要回 base 下重新 xmake -b core)</p>
+</section>
+<section id="ide">
+<h2>6、IDE无法正常提示<a class="headerlink" href="#ide" title="Permalink to this heading"></a></h2>
+<ol class="arabic simple">
+<li><p>安装 pybind11-stubgen，使用命令 pip install pybind11-stubgen</p></li>
+<li><p>运行 pybind11-stubgen hikyuu -o . 命令，即可正常提示帮助信息。</p></li>
+</ol>
+</section>
+</section>
+</div>
+</body>
+</html>

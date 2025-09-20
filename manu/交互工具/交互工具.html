@@ -1,0 +1,591 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+</head>
+<body>
+<div itemprop="articleBody">
+<section id="id1">
+<h1>交互工具<a class="headerlink" href="#id1" title="Permalink to this heading"></a></h1>
+<p>Hikyuu是研究系统交易的Python量化框架，可以在其基础上构建自己的客户端程序。而Hikyuu库本身自带一个交互式工具，可以在Python Shell环境下进行探索，可以从在Python shell中使用 “from hikyuu.interactive” 引入该工具。该工具主要提供基于 matplotlib 的图形绘制函数，便于在交互式环境下绘制K线、指标、信号等。</p>
+<p>使用 matplotlib 绘制图形，必须了解 matplotlib 绘图中的两个基本对象：figure、axes。窗口（figure）是坐标轴（axes）对象的容器，绘图时首先需指定窗口，在窗口中绘制相应的坐标轴，然后在坐标轴中绘制图形。在 matplotlib 中绘制图形需要指定图形在哪个坐标轴中进行绘制。当绘图函数中没有指定坐标轴时，将默认使用当前的坐标轴，如果不存在任何一个坐标轴时，matplotlib 将创建自动创建一个窗口及其包含的坐标轴。</p>
+<p>绘图的详细示例：</p>
+<p><a class="reference external" href="https://nbviewer.jupyter.org/github/fasiondog/hikyuu/blob/master/hikyuu/examples/notebook/000-Index.ipynb?flush_cache=True">https://nbviewer.jupyter.org/github/fasiondog/hikyuu/blob/master/hikyuu/examples/notebook/000-Index.ipynb?flush_cache=True</a></p>
+<section id="id2">
+<h2>绘制组合窗口<a class="headerlink" href="#id2" title="Permalink to this heading"></a></h2>
+<p>创建组合窗口的快捷函数,返回相应的 axes 对象或tuple。</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="create_figure">
+<span class="sig-name descname"><span class="pre">create_figure</span></span><span class="sig-paren">(</span><span class="optional">[</span><em class="sig-param"><span class="n"><span class="pre">n</span> <span class="pre">=</span> <span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">figsize</span> <span class="pre">=</span> <span class="pre">(10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">8)</span></span></em><span class="optional">]</span><span class="sig-paren">)</span><a class="headerlink" href="#create_figure" title="永久链接至目标"></a></dt>
+<dd><p>生成含有指定坐标轴数量的窗口，最大只支持4个坐标轴。</p>
+<dl class="field-list simple">
+<dt class="field-odd">参数<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>n</strong> (<em>int</em>) – 坐标轴数量</p></li>
+<li><p><strong>figsize</strong> – (宽, 高)</p></li>
+</ul>
+</dd>
+<dt class="field-even">返回<span class="colon">:</span></dt>
+<dd class="field-even"><p>(ax1, ax2, …) 根据指定的坐标轴数量而定，超出[1,4]个坐标轴时，返回None</p>
+</dd>
+</dl>
+</dd></dl>
+</section>
+<section id="id3">
+<h2>绘制图形的便捷函数<a class="headerlink" href="#id3" title="Permalink to this heading"></a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="ax_set_locator_formatter">
+<span class="sig-name descname"><span class="pre">ax_set_locator_formatter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">axes</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dates</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">typ</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ax_set_locator_formatter" title="永久链接至目标"></a></dt>
+<dd><p>设置指定坐标轴的日期显示，根据指定的K线类型优化X轴坐标显示</p>
+<dl class="field-list simple">
+<dt class="field-odd">参数<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>axes</strong> – 指定的坐标轴</p></li>
+<li><p><strong>dates</strong> – Datetime构成可迭代序列</p></li>
+<li><p><strong>typ</strong> (<em>Query.KType</em>) – K线类型</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+<dl class="py function">
+<dt class="sig sig-object py" id="adjust_axes_show">
+<span class="sig-name descname"><span class="pre">adjust_axes_show</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">axeslist</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#adjust_axes_show" title="永久链接至目标"></a></dt>
+<dd><p>用于调整上下紧密相连的坐标轴显示时，其上一坐标轴最小值刻度和下一坐标轴最大值刻度显示重叠的问题</p>
+<dl class="field-list simple">
+<dt class="field-odd">参数<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>axeslist</strong> – 上下相连的坐标轴列表 (ax1,ax2,…)</p>
+</dd>
+</dl>
+</dd></dl>
+<dl class="py function">
+<dt class="sig sig-object py" id="ax_draw_macd">
+<span class="sig-name descname"><span class="pre">ax_draw_macd</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">axes</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kdata</span></span></em><span class="optional">[</span>, <em class="sig-param"><span class="n"><span class="pre">n1=12</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n2=26</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n3=9</span></span></em><span class="optional">]</span><span class="sig-paren">)</span><a class="headerlink" href="#ax_draw_macd" title="永久链接至目标"></a></dt>
+<dd><p>绘制MACD</p>
+<dl class="field-list simple">
+<dt class="field-odd">参数<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>axes</strong> – 指定的坐标轴</p></li>
+<li><p><strong>kdata</strong> (<a class="reference internal" href="../base/datatype.html#hikyuu.KData" title="hikyuu.KData"><em>KData</em></a>) – KData</p></li>
+<li><p><strong>n1</strong> (<em>int</em>) – 指标 MACD 的参数1</p></li>
+<li><p><strong>n2</strong> (<em>int</em>) – 指标 MACD 的参数2</p></li>
+<li><p><strong>n3</strong> (<em>int</em>) – 指标 MACD 的参数3</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+<dl class="py function">
+<dt class="sig sig-object py" id="ax_draw_macd2">
+<span class="sig-name descname"><span class="pre">ax_draw_macd2</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">axes</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ref</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kdata</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n1</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">12</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n2</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">26</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n3</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">9</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ax_draw_macd2" title="永久链接至目标"></a></dt>
+<dd><p>绘制MACD。
+当BAR值变化与参考序列ref变化不一致时，显示为灰色，
+当BAR和参考序列ref同时上涨，显示红色
+当BAR和参考序列ref同时下跌，显示绿色</p>
+<dl class="field-list simple">
+<dt class="field-odd">参数<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>axes</strong> – 指定的坐标轴</p></li>
+<li><p><strong>ref</strong> – 参考序列，EMA</p></li>
+<li><p><strong>kdata</strong> (<a class="reference internal" href="../base/datatype.html#hikyuu.KData" title="hikyuu.KData"><em>KData</em></a>) – KData</p></li>
+<li><p><strong>n1</strong> (<em>int</em>) – 指标 MACD 的参数1</p></li>
+<li><p><strong>n2</strong> (<em>int</em>) – 指标 MACD 的参数2</p></li>
+<li><p><strong>n3</strong> (<em>int</em>) – 指标 MACD 的参数3</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+</section>
+<section id="id4">
+<h2>通达信兼容绘图函数<a class="headerlink" href="#id4" title="Permalink to this heading"></a></h2>
+<p>通达信兼容绘图函数（仅支持 matplotlib 引擎）</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="RGB">
+<span class="sig-name descname"><span class="pre">RGB</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">r</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">g</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">b</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#RGB" title="永久链接至目标"></a></dt>
+<dd><p>颜色RGB值，如 RGB(255, 0, 0)</p>
+</dd></dl>
+<dl class="py function">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">STICKLINE(cond:</span> <span class="pre">Indicator,</span> <span class="pre">price1:</span> <span class="pre">Indicator,</span> <span class="pre">price2:</span> <span class="pre">Indicator,</span> <span class="pre">width:</span> <span class="pre">int</span> <span class="pre">=</span> <span class="pre">2.0,</span></span></dt>
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">empty:</span> <span class="pre">bool</span> <span class="pre">=</span> <span class="pre">False,</span> <span class="pre">color='m',</span> <span class="pre">alpha=1.0,</span> <span class="pre">kdata=None,</span> <span class="pre">new=False,</span> <span class="pre">axes=None)</span></span></dt>
+<dd><p>在满足cond的条件下，在 price1 和 price2 之间绘制一个宽度为 width 的柱状图。</p>
+<p>注意: cond, price1, price2 应含有数据，否则请指定 kdata 作为指标计算的上下文</p>
+<dl class="field-list simple">
+<dt class="field-odd">参数<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>cond</strong> (<a class="reference internal" href="../indicator/ind_class.html#hikyuu.indicator.Indicator" title="hikyuu.indicator.Indicator"><em>Indicator</em></a>) – 条件表达式，用于确定是否绘制柱状线</p></li>
+<li><p><strong>price1</strong> (<a class="reference internal" href="../indicator/ind_class.html#hikyuu.indicator.Indicator" title="hikyuu.indicator.Indicator"><em>Indicator</em></a>) – 第一个价格</p></li>
+<li><p><strong>price2</strong> (<a class="reference internal" href="../indicator/ind_class.html#hikyuu.indicator.Indicator" title="hikyuu.indicator.Indicator"><em>Indicator</em></a>) – 第二个价格</p></li>
+<li><p><strong>width</strong> (<em>int</em>) – (optional) 柱状宽度. Defaults to 2.0.</p></li>
+<li><p><strong>empty</strong> (<em>bool</em>) – (optional): 空心. Defaults to False.</p></li>
+<li><p><strong>kdata</strong> (<a class="reference internal" href="../base/datatype.html#hikyuu.KData" title="hikyuu.KData"><em>KData</em></a>) – (optional): 指定的上下文K线. Defaults to None.</p></li>
+<li><p><strong>new</strong> (<em>bool</em>) – (optional): 在新窗口中绘制. Defaults to False.</p></li>
+<li><p><strong>axes</strong> – (optional): 在指定的坐标轴中绘制. Defaults to None.</p></li>
+<li><p><strong>color</strong> (<em>str</em>) – (optional): 颜色. Defaults to ‘m’.</p></li>
+<li><p><strong>alpha</strong> (<em>float</em>) – (optional): 透明度. Defaults to 1.0.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+<dl class="py function">
+<dt class="sig sig-object py" id="DRAWBAND">
+<span class="sig-name descname"><span class="pre">DRAWBAND</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">val1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../indicator/ind_class.html#hikyuu.indicator.Indicator" title="hikyuu.indicator.Indicator"><span class="pre">Indicator</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">color1</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'m'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">val2</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../indicator/ind_class.html#hikyuu.indicator.Indicator" title="hikyuu.indicator.Indicator"><span class="pre">Indicator</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">color2</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'b'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kdata</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">alpha</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">axes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">linestyle</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'-'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#DRAWBAND" title="永久链接至目标"></a></dt>
+<dd><p>画出带状线</p>
+<p>用法:DRAWBAND(val1, color1, val2, color2), 当 val1 &gt; val2 时,在 val1 和 val2 之间填充 color1;
+当 val1 &lt; val2 时,填充 color2,这里的颜色均使用 matplotlib 颜色代码.
+例如:DRAWBAND(OPEN, ‘r’, CLOSE, ‘b’)</p>
+<dl class="field-list simple">
+<dt class="field-odd">参数<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>val1</strong> (<a class="reference internal" href="../indicator/ind_class.html#hikyuu.indicator.Indicator" title="hikyuu.indicator.Indicator"><em>Indicator</em></a>) – 指标1</p></li>
+<li><p><strong>color1</strong> (<em>str</em>) – (optional): 颜色1. Defaults to ‘m’.</p></li>
+<li><p><strong>val2</strong> (<a class="reference internal" href="../indicator/ind_class.html#hikyuu.indicator.Indicator" title="hikyuu.indicator.Indicator"><em>Indicator</em></a>) – (optional): 指标2. Defaults to None.</p></li>
+<li><p><strong>color2</strong> (<em>str</em>) – (optional): 颜色2. Defaults to ‘b’.</p></li>
+<li><p><strong>kdata</strong> (<a class="reference internal" href="../base/datatype.html#hikyuu.KData" title="hikyuu.KData"><em>KData</em></a>) – (optional): 指定指标上下文. Defaults to None.</p></li>
+<li><p><strong>alpha</strong> (<em>float</em>) – (optional): 透明度. Defaults to 0.2.</p></li>
+<li><p><strong>new</strong> (<em>bool</em>) – (optional): 在新窗口中绘制. Defaults to False.</p></li>
+<li><p><strong>axes</strong> – (optional): 在指定的坐标轴中绘制. Defaults to None.</p></li>
+<li><p><strong>linestyle</strong> (<em>str</em>) – (optional): 包络线类型. Defaults to ‘-‘.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+<dl class="py function">
+<dt class="sig sig-object py" id="PLOYLINE">
+<span class="sig-name descname"><span class="pre">PLOYLINE</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cond</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../indicator/ind_class.html#hikyuu.indicator.Indicator" title="hikyuu.indicator.Indicator"><span class="pre">Indicator</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">price</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../indicator/ind_class.html#hikyuu.indicator.Indicator" title="hikyuu.indicator.Indicator"><span class="pre">Indicator</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">kdata</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../base/datatype.html#hikyuu.KData" title="hikyuu.KData"><span class="pre">KData</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">color</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'m'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">linewidth</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">axes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#PLOYLINE" title="永久链接至目标"></a></dt>
+<dd><p>在图形上绘制折线段。</p>
+<p>用法：PLOYLINE(COND，PRICE)，当COND条件满足时，以PRICE位置为顶点画折线连接。
+例如：PLOYLINE(HIGH&gt;=HHV(HIGH,20),HIGH, kdata=k)表示在创20天新高点之间画折线。</p>
+<dl class="field-list simple">
+<dt class="field-odd">参数<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>cond</strong> (<a class="reference internal" href="../indicator/ind_class.html#hikyuu.indicator.Indicator" title="hikyuu.indicator.Indicator"><em>Indicator</em></a>) – 指定条件</p></li>
+<li><p><strong>price</strong> (<a class="reference internal" href="../indicator/ind_class.html#hikyuu.indicator.Indicator" title="hikyuu.indicator.Indicator"><em>Indicator</em></a>) – 位置</p></li>
+<li><p><strong>kdata</strong> (<a class="reference internal" href="../base/datatype.html#hikyuu.KData" title="hikyuu.KData"><em>KData</em></a>) – (optional): 指定的上下文. Defaults to None.</p></li>
+<li><p><strong>color</strong> (<em>str</em>) – (optional): 颜色. Defaults to ‘b’.</p></li>
+<li><p><strong>linewidth</strong> (<em>float</em>) – (optional): 宽度. Defaults to 1.0.</p></li>
+<li><p><strong>new</strong> (<em>bool</em>) – (optional): 在新窗口中绘制. Defaults to False.</p></li>
+<li><p><strong>axes</strong> – (optional): 指定的axes. Defaults to None.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+<dl class="py function">
+<dt class="sig sig-object py" id="DRAWLINE">
+<span class="sig-name descname"><span class="pre">DRAWLINE</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cond1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../indicator/ind_class.html#hikyuu.indicator.Indicator" title="hikyuu.indicator.Indicator"><span class="pre">Indicator</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">price1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../indicator/ind_class.html#hikyuu.indicator.Indicator" title="hikyuu.indicator.Indicator"><span class="pre">Indicator</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">cond2</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../indicator/ind_class.html#hikyuu.indicator.Indicator" title="hikyuu.indicator.Indicator"><span class="pre">Indicator</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">price2</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../indicator/ind_class.html#hikyuu.indicator.Indicator" title="hikyuu.indicator.Indicator"><span class="pre">Indicator</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">expand</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kdata</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../base/datatype.html#hikyuu.KData" title="hikyuu.KData"><span class="pre">KData</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">color</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'m'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">axes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#DRAWLINE" title="永久链接至目标"></a></dt>
+<dd><p>在图形上绘制直线段。</p>
+<p>用法：DRAWLINE(cond1, price1, cond2, price2, expand)
+当COND1条件满足时，在PRICE1位置画直线起点，当COND2条件满足时，在PRICE2位置画直线终点，EXPAND为延长类型。
+例如：DRAWLINE(HIGH&gt;=HHV(HIGH,20),HIGH,LOW&lt;=LLV(LOW,20),LOW,1)表示在创20天新高与创20天新低之间画直线并且向右延长</p>
+<dl class="field-list simple">
+<dt class="field-odd">参数<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>cond1</strong> (<a class="reference internal" href="../indicator/ind_class.html#hikyuu.indicator.Indicator" title="hikyuu.indicator.Indicator"><em>Indicator</em></a>) – 条件1</p></li>
+<li><p><strong>price1</strong> (<a class="reference internal" href="../indicator/ind_class.html#hikyuu.indicator.Indicator" title="hikyuu.indicator.Indicator"><em>Indicator</em></a>) – 位置1</p></li>
+<li><p><strong>cond2</strong> (<a class="reference internal" href="../indicator/ind_class.html#hikyuu.indicator.Indicator" title="hikyuu.indicator.Indicator"><em>Indicator</em></a>) – 条件2</p></li>
+<li><p><strong>price2</strong> (<a class="reference internal" href="../indicator/ind_class.html#hikyuu.indicator.Indicator" title="hikyuu.indicator.Indicator"><em>Indicator</em></a>) – 位置2</p></li>
+<li><p><strong>expand</strong> (<em>int</em>) – (optional): 0: 不延长 | 1: 向右延长 | 10: 向左延长 | 11: 双向延长. Defaults to 0.</p></li>
+<li><p><strong>kdata</strong> (<a class="reference internal" href="../base/datatype.html#hikyuu.KData" title="hikyuu.KData"><em>KData</em></a>) – (optional): 指定的上下文. Defaults to None.</p></li>
+<li><p><strong>color</strong> (<em>str</em>) – (optional): 指定颜色. Defaults to ‘m’.</p></li>
+<li><p><strong>new</strong> (<em>bool</em>) – (optional): 在新窗口中绘制. Defaults to False.</p></li>
+<li><p><strong>axes</strong> – (optional): 指定的坐标轴. Defaults to None.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+<dl class="py function">
+<dt class="sig sig-object py" id="DRAWTEXT">
+<span class="sig-name descname"><span class="pre">DRAWTEXT</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cond</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../indicator/ind_class.html#hikyuu.indicator.Indicator" title="hikyuu.indicator.Indicator"><span class="pre">Indicator</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">price</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../indicator/ind_class.html#hikyuu.indicator.Indicator" title="hikyuu.indicator.Indicator"><span class="pre">Indicator</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">text</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kdata</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../base/datatype.html#hikyuu.KData" title="hikyuu.KData"><span class="pre">KData</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">color</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'m'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">axes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#DRAWTEXT" title="永久链接至目标"></a></dt>
+<dd><p>在图形上显示文字。</p>
+<p>用法: DRAWTEXT(cond, price, text), 当 cond 条件满足时, 在 price 位置书写文字 text。
+例如: DRAWTEXT(CLOSE/OPEN&gt;1.08,LOW,’大阳线’)表示当日实体阳线大于8%时在最低价位置显示’大阳线’字样.</p>
+<dl class="field-list simple">
+<dt class="field-odd">参数<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>cond</strong> (<a class="reference internal" href="../indicator/ind_class.html#hikyuu.indicator.Indicator" title="hikyuu.indicator.Indicator"><em>Indicator</em></a>) – 条件</p></li>
+<li><p><strong>price</strong> (<a class="reference internal" href="../indicator/ind_class.html#hikyuu.indicator.Indicator" title="hikyuu.indicator.Indicator"><em>Indicator</em></a>) – 显示位置</p></li>
+<li><p><strong>text</strong> (<em>str</em>) – 待显示文字</p></li>
+<li><p><strong>kdata</strong> (<a class="reference internal" href="../base/datatype.html#hikyuu.KData" title="hikyuu.KData"><em>KData</em></a>) – (optional): 指定的上下文. Defaults to None.</p></li>
+<li><p><strong>color</strong> (<em>str</em>) – (optional): 指定颜色. Defaults to ‘m’.</p></li>
+<li><p><strong>new</strong> (<em>bool</em>) – (optional): 在新窗口中绘制. Defaults to False.</p></li>
+<li><p><strong>axes</strong> – (optional): 指定的坐标轴. Defaults to None.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+<dl class="py function">
+<dt class="sig sig-object py" id="DRAWTEXT_FIX">
+<span class="sig-name descname"><span class="pre">DRAWTEXT_FIX</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cond</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../indicator/ind_class.html#hikyuu.indicator.Indicator" title="hikyuu.indicator.Indicator"><span class="pre">Indicator</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">text</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kdata</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../base/datatype.html#hikyuu.KData" title="hikyuu.KData"><span class="pre">KData</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">color</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'m'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">axes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#DRAWTEXT_FIX" title="永久链接至目标"></a></dt>
+<dd><p>固定位置显示文字</p>
+<p>用法:DRAWTEXT_FIX(cond,x y, text), cond 中一般需要加 ISLASTBAR,当 cond 条件满足时,
+在当前指标窗口内(X,Y)位置书写文字TEXT,X,Y为书写点在窗口中相对于左上角的百分比</p>
+<p>例如:DRAWTEXT_FIX(ISLASTBAR() &amp; (CLOSE/OPEN&gt;1.08),0.5,0.5,0,’大阳线’)表示最后一个交易日实体阳线
+大于8%时在窗口中间位置显示’大阳线’字样.</p>
+<dl class="field-list simple">
+<dt class="field-odd">参数<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>cond</strong> (<a class="reference internal" href="../indicator/ind_class.html#hikyuu.indicator.Indicator" title="hikyuu.indicator.Indicator"><em>Indicator</em></a>) – 条件</p></li>
+<li><p><strong>x</strong> (<em>float</em>) – x轴坐标</p></li>
+<li><p><strong>y</strong> (<em>float</em>) – y轴坐标</p></li>
+<li><p><strong>type</strong> (<em>int</em>) – (optional): 0 左对齐 | 1 右对齐.</p></li>
+<li><p><strong>text</strong> (<em>str</em>) – 待显示文字</p></li>
+<li><p><strong>kdata</strong> (<a class="reference internal" href="../base/datatype.html#hikyuu.KData" title="hikyuu.KData"><em>KData</em></a>) – (optional): 指定的上下文. Defaults to None.</p></li>
+<li><p><strong>color</strong> (<em>str</em>) – (optional): 指定颜色. Defaults to ‘m’.</p></li>
+<li><p><strong>new</strong> (<em>bool</em>) – (optional): 在新窗口中绘制. Defaults to False.</p></li>
+<li><p><strong>axes</strong> – (optional): 指定坐标轴. Defaults to None.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+<dl class="py function">
+<dt class="sig sig-object py" id="DRAWNUMBER">
+<span class="sig-name descname"><span class="pre">DRAWNUMBER</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cond</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../indicator/ind_class.html#hikyuu.indicator.Indicator" title="hikyuu.indicator.Indicator"><span class="pre">Indicator</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">price</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../indicator/ind_class.html#hikyuu.indicator.Indicator" title="hikyuu.indicator.Indicator"><span class="pre">Indicator</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">number</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../indicator/ind_class.html#hikyuu.indicator.Indicator" title="hikyuu.indicator.Indicator"><span class="pre">Indicator</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">kdata</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../base/datatype.html#hikyuu.KData" title="hikyuu.KData"><span class="pre">KData</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">color</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'m'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">axes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#DRAWNUMBER" title="永久链接至目标"></a></dt>
+<dd><p>画出数字.</p>
+<p>用法:DRAWNUMBER(cond, price, number),当 cond 条件满足时,在 price 位置书写数字 number.
+例如:DRAWNUMBER(CLOSE/OPEN&gt;1.08,LOW,C)表示当日实体阳线大于8%时在最低价位置显示收盘价。</p>
+<dl class="field-list simple">
+<dt class="field-odd">参数<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>cond:</strong> (<a class="reference internal" href="../indicator/ind_class.html#hikyuu.indicator.Indicator" title="hikyuu.indicator.Indicator"><em>Indicator</em></a>) – 条件</p></li>
+<li><p><strong>price</strong> (<a class="reference internal" href="../indicator/ind_class.html#hikyuu.indicator.Indicator" title="hikyuu.indicator.Indicator"><em>Indicator</em></a>) – 绘制位置</p></li>
+<li><p><strong>number</strong> (<a class="reference internal" href="../indicator/ind_class.html#hikyuu.indicator.Indicator" title="hikyuu.indicator.Indicator"><em>Indicator</em></a>) – 待绘制数字</p></li>
+<li><p><strong>kdata</strong> (<a class="reference internal" href="../base/datatype.html#hikyuu.KData" title="hikyuu.KData"><em>KData</em></a>) – (optional): 指定的上下文. Defaults to None.</p></li>
+<li><p><strong>color</strong> (<em>str</em>) – (optional): 指定颜色. Defaults to ‘m’.</p></li>
+<li><p><strong>new</strong> (<em>bool</em>) – (optional): 在新窗口中绘制. Defaults to False.</p></li>
+<li><p><strong>axes</strong> – (optional): 指定的坐标轴. Defaults to None.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+<dl class="py function">
+<dt class="sig sig-object py" id="DRAWNUMBER_FIX">
+<span class="sig-name descname"><span class="pre">DRAWNUMBER_FIX</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cond</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../indicator/ind_class.html#hikyuu.indicator.Indicator" title="hikyuu.indicator.Indicator"><span class="pre">Indicator</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">number</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kdata</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../base/datatype.html#hikyuu.KData" title="hikyuu.KData"><span class="pre">KData</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">color</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'m'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">axes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#DRAWNUMBER_FIX" title="永久链接至目标"></a></dt>
+<dd><p>固定位置显示数字.</p>
+<p>用法:DRAWNUMBER_FIX(cond,x,y,type,number), cond 中一般需要加 ISLASTBAR, 当 cond 条件满足时,
+在当前指标窗口内 (x, y) 位置书写数字 number, x,y为书写点在窗口中相对于左上角的百分比,type:0为左对齐,1为右对齐。</p>
+<p>例如:DRAWNUMBER_FIX(ISLASTBAR() &amp; (CLOSE/OPEN&gt;1.08), 0.5,0.5,0,C)表示最后一个交易日实体阳线大于8%时在窗口中间位置显示收盘价</p>
+<dl class="field-list simple">
+<dt class="field-odd">参数<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>cond</strong> (<a class="reference internal" href="../indicator/ind_class.html#hikyuu.indicator.Indicator" title="hikyuu.indicator.Indicator"><em>Indicator</em></a>) – _description_</p></li>
+<li><p><strong>x</strong> (<em>float</em>) – _description_</p></li>
+<li><p><strong>y</strong> (<em>float</em>) – _description_</p></li>
+<li><p><strong>type</strong> (<em>int</em>) – _description_</p></li>
+<li><p><strong>number</strong> (<a class="reference internal" href="../indicator/ind_class.html#hikyuu.indicator.Indicator" title="hikyuu.indicator.Indicator"><em>Indicator</em></a>) – _description_</p></li>
+<li><p><strong>kdata</strong> (<a class="reference internal" href="../base/datatype.html#hikyuu.KData" title="hikyuu.KData"><em>KData</em></a>) – (optional): _description_. Defaults to None.</p></li>
+<li><p><strong>color</strong> (<em>str</em>) – (optional): _description_. Defaults to ‘m’.</p></li>
+<li><p><strong>new</strong> (<em>bool</em>) – (optional): _description_. Defaults to False.</p></li>
+<li><p><strong>axes</strong> – (optional): _description_. Defaults to None.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+<dl class="py function">
+<dt class="sig sig-object py" id="DRAWSL">
+<span class="sig-name descname"><span class="pre">DRAWSL</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cond</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../indicator/ind_class.html#hikyuu.indicator.Indicator" title="hikyuu.indicator.Indicator"><span class="pre">Indicator</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">price</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../indicator/ind_class.html#hikyuu.indicator.Indicator" title="hikyuu.indicator.Indicator"><span class="pre">Indicator</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">slope</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="../indicator/ind_class.html#hikyuu.indicator.Indicator" title="hikyuu.indicator.Indicator"><span class="pre">Indicator</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">length</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="../indicator/ind_class.html#hikyuu.indicator.Indicator" title="hikyuu.indicator.Indicator"><span class="pre">Indicator</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">direct</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kdata</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../base/datatype.html#hikyuu.KData" title="hikyuu.KData"><span class="pre">KData</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">color</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'m'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">axes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#DRAWSL" title="永久链接至目标"></a></dt>
+<dd><p>绘制斜线.</p>
+<p>用法:DRAWSL(cond,price,slope,length,diect),当 cond 条件满足时,在 price 位置画斜线, slope 为斜率,
+lengh为长度, direct 为0向右延伸,1向左延伸,2双向延伸。</p>
+<p>注意:
+1. K线间的纵向高度差为 slope;
+2. slope 为 0 时, 为水平线;
+3. slope 为 10000 时, 为垂直线, length 为向上的像素高度, direct 表示向上或向下延伸
+4. slope 和 length 支持变量;</p>
+<dl class="field-list simple">
+<dt class="field-odd">参数<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>cond</strong> (<a class="reference internal" href="../indicator/ind_class.html#hikyuu.indicator.Indicator" title="hikyuu.indicator.Indicator"><em>Indicator</em></a>) – 条件指标</p></li>
+<li><p><strong>price:</strong> (<a class="reference internal" href="../indicator/ind_class.html#hikyuu.indicator.Indicator" title="hikyuu.indicator.Indicator"><em>Indicator</em></a>) – 价格</p></li>
+<li><p><strong>slope</strong> – 斜率</p></li>
+<li><p><strong>length</strong> – 长度</p></li>
+<li><p><strong>direct</strong> (<em>int</em>) – 方向</p></li>
+<li><p><strong>kdata</strong> (<a class="reference internal" href="../base/datatype.html#hikyuu.KData" title="hikyuu.KData"><em>KData</em></a>) – (optional): 指定的上下文. Defaults to None.</p></li>
+<li><p><strong>color</strong> (<em>str</em>) – (optional): 颜色. Defaults to ‘m’.</p></li>
+<li><p><strong>new</strong> (<em>bool</em>) – (optional): 在新窗口中绘制. Defaults to False.</p></li>
+<li><p><strong>axes</strong> – (optional): 指定的坐标轴. Defaults to None.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+<dl class="py function">
+<dt class="sig sig-object py" id="DRAWIMG">
+<span class="sig-name descname"><span class="pre">DRAWIMG</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cond</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../indicator/ind_class.html#hikyuu.indicator.Indicator" title="hikyuu.indicator.Indicator"><span class="pre">Indicator</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">price</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../indicator/ind_class.html#hikyuu.indicator.Indicator" title="hikyuu.indicator.Indicator"><span class="pre">Indicator</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">img</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kdata</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../base/datatype.html#hikyuu.KData" title="hikyuu.KData"><span class="pre">KData</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">axes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#DRAWIMG" title="永久链接至目标"></a></dt>
+<dd><p>画图片</p>
+<p>用法:DRAWIMG(cond,price,’图像文件文件名’),当条件 cond 满足时,在 price 位置画指定的图片
+例如:DRAWIMG(O&gt;C,CLOSE, ‘123.png’)。</p>
+<dl class="field-list simple">
+<dt class="field-odd">参数<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>cond</strong> (<a class="reference internal" href="../indicator/ind_class.html#hikyuu.indicator.Indicator" title="hikyuu.indicator.Indicator"><em>Indicator</em></a>) – 指定条件</p></li>
+<li><p><strong>price</strong> (<a class="reference internal" href="../indicator/ind_class.html#hikyuu.indicator.Indicator" title="hikyuu.indicator.Indicator"><em>Indicator</em></a>) – 指定价格</p></li>
+<li><p><strong>img</strong> (<em>str</em>) – 图像文件名</p></li>
+<li><p><strong>kdata</strong> (<a class="reference internal" href="../base/datatype.html#hikyuu.KData" title="hikyuu.KData"><em>KData</em></a>) – (optional): 指定上下文. Defaults to None.</p></li>
+<li><p><strong>new</strong> (<em>bool</em>) – (optional): 在新窗口中绘制. Defaults to False.</p></li>
+<li><p><strong>axes</strong> – (optional): 在指定坐标轴中绘制. Defaults to None.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+<dl class="py function">
+<dt class="sig sig-object py" id="DRAWICON">
+<span class="sig-name descname"><span class="pre">DRAWICON</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cond</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../indicator/ind_class.html#hikyuu.indicator.Indicator" title="hikyuu.indicator.Indicator"><span class="pre">Indicator</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">price</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../indicator/ind_class.html#hikyuu.indicator.Indicator" title="hikyuu.indicator.Indicator"><span class="pre">Indicator</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kdata</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../base/datatype.html#hikyuu.KData" title="hikyuu.KData"><span class="pre">KData</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">axes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#DRAWICON" title="永久链接至目标"></a></dt>
+<dd><p>绘制内建图标</p>
+</dd></dl>
+<dl class="py function">
+<dt class="sig sig-object py" id="SHOWICONS">
+<span class="sig-name descname"><span class="pre">SHOWICONS</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#SHOWICONS" title="永久链接至目标"></a></dt>
+<dd><p>显示所有内置图标</p>
+</dd></dl>
+<dl class="py function">
+<dt class="sig sig-object py" id="DRAWRECTREL">
+<span class="sig-name descname"><span class="pre">DRAWRECTREL</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">left</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">top</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">right</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bottom</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">color</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'m'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">frame</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fill</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">alpha</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">axes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#DRAWRECTREL" title="永久链接至目标"></a></dt>
+<dd><p>相对位置上画矩形.</p>
+<p>注意：原点为坐标轴左上角(0, 0)，和 matplotlib 不同。
+用法: DRAWRECTREL(left,top,right,bottom,color), 以图形窗口 (left, top) 为左上角, (right, bottom) 为右下角绘制矩形, 坐标单位是窗口沿水平和垂直方向的1/1000,取值范围是0—999,超出范围则可能显示在图形窗口外,矩形中间填充颜色COLOR,COLOR为0表示不填充.</p>
+<p>例如:DRAWRECTREL(0,0,500,500,RGB(255,255,0)) 表示在图形最左上部1/4位置用黄色绘制矩形</p>
+<dl class="field-list simple">
+<dt class="field-odd">参数<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>left</strong> (<em>int</em>) – 左上角x</p></li>
+<li><p><strong>top</strong> (<em>int</em>) – 左上角y</p></li>
+<li><p><strong>right</strong> (<em>int</em>) – 右下角x</p></li>
+<li><p><strong>bottom</strong> (<em>int</em>) – 右下角y</p></li>
+<li><p><strong>color</strong> (<em>str</em>) – (optional): 指定颜色. Defaults to ‘m’.</p></li>
+<li><p><strong>frame</strong> (<em>bool</em>) – (optional): 添加边框. Defaults to False.</p></li>
+<li><p><strong>fill</strong> (<em>bool</em>) – (optional): 颜色填充. Defaults to True.</p></li>
+<li><p><strong>alpha</strong> (<em>float</em>) – (optional): 透明度. Defaults to 0.1.</p></li>
+<li><p><strong>new</strong> (<em>bool</em>) – (optional): 在新窗口中绘制. Defaults to False.</p></li>
+<li><p><strong>axes</strong> – (optional): 指定的坐标轴. Defaults to None.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+</section>
+<section id="k">
+<h2>绘制K线、指标、信号等<a class="headerlink" href="#k" title="Permalink to this heading"></a></h2>
+<p>以下函数已设为相应类型对象的 plot 函数，如 KData kdata 可直接调用 kdata.plot()，等同于没有第一个参数的 kplot()</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="kplot">
+<span class="sig-name descname"><span class="pre">kplot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">kdata</span></span></em><span class="optional">[</span>, <em class="sig-param"><span class="n"><span class="pre">new=True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">axes=None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">colorup='r'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">colordown='g'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">width=0.6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">alpha=1.0</span></span></em><span class="optional">]</span><span class="sig-paren">)</span><a class="headerlink" href="#kplot" title="永久链接至目标"></a></dt>
+<dd><p>绘制K线图</p>
+<dl class="field-list simple">
+<dt class="field-odd">参数<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>kdata</strong> (<a class="reference internal" href="../base/datatype.html#hikyuu.KData" title="hikyuu.KData"><em>KData</em></a>) – K线数据</p></li>
+<li><p><strong>new</strong> (<em>bool</em>) – 是否在新窗口中显示，只在没有指定axes时生效</p></li>
+<li><p><strong>axes</strong> – 指定的坐标轴</p></li>
+<li><p><strong>colorup</strong> – the color of the rectangle where close &gt;= open</p></li>
+<li><p><strong>colordown</strong> – the color of the rectangle where close &lt; open</p></li>
+<li><p><strong>width</strong> – fraction of a day for the rectangle width</p></li>
+<li><p><strong>alpha</strong> – the rectangle alpha level, 透明度(0.0~1.0) 1.0为不透明</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+<dl class="py function">
+<dt class="sig sig-object py" id="mkplot">
+<span class="sig-name descname"><span class="pre">mkplot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">kdata</span></span></em><span class="optional">[</span>, <em class="sig-param"><span class="n"><span class="pre">new=True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">axes=None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">colorup='r'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">colordown='g'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ticksize=3</span></span></em><span class="optional">]</span><span class="sig-paren">)</span><a class="headerlink" href="#mkplot" title="永久链接至目标"></a></dt>
+<dd><p>绘制美式K线图</p>
+<dl class="field-list simple">
+<dt class="field-odd">参数<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>kdata</strong> (<a class="reference internal" href="../base/datatype.html#hikyuu.KData" title="hikyuu.KData"><em>KData</em></a>) – K线数据</p></li>
+<li><p><strong>new</strong> (<em>bool</em>) – 是否在新窗口中显示，只在没有指定axes时生效</p></li>
+<li><p><strong>axes</strong> – 指定的坐标轴</p></li>
+<li><p><strong>colorup</strong> – the color of the lines where close &gt;= open</p></li>
+<li><p><strong>colordown</strong> – the color of the lines where close &lt; open</p></li>
+<li><p><strong>ticksize</strong> – open/close tick marker in points</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+<dl class="py function">
+<dt class="sig sig-object py" id="iplot">
+<span class="sig-name descname"><span class="pre">iplot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">indicator</span></span></em><span class="optional">[</span>, <em class="sig-param"><span class="n"><span class="pre">new=True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">axes=None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">legend_on=False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">text_on=False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">text_color='k'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">zero_on=False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">label=None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">*args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">**kwargs</span></span></em><span class="optional">]</span><span class="sig-paren">)</span><a class="headerlink" href="#iplot" title="永久链接至目标"></a></dt>
+<dd><p>绘制indicator曲线图</p>
+<dl class="field-list simple">
+<dt class="field-odd">参数<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>indicator</strong> (<a class="reference internal" href="../indicator/ind_class.html#hikyuu.indicator.Indicator" title="hikyuu.indicator.Indicator"><em>Indicator</em></a>) – indicator实例</p></li>
+<li><p><strong>new</strong> – 是否在新窗口中显示，只在没有指定axes时生效</p></li>
+<li><p><strong>axes</strong> – 指定的坐标轴</p></li>
+<li><p><strong>legend_on</strong> – 是否打开图例</p></li>
+<li><p><strong>text_on</strong> – 是否在左上角显示指标名称及其参数</p></li>
+<li><p><strong>text_color</strong> – 指标名称解释文字的颜色，默认为黑色</p></li>
+<li><p><strong>zero_on</strong> – 是否需要在y=0轴上绘制一条直线</p></li>
+<li><p><strong>label</strong> (<em>str</em>) – label显示文字信息，text_on 及 legend_on 为 True 时生效</p></li>
+<li><p><strong>args</strong> – pylab plot参数</p></li>
+<li><p><strong>kwargs</strong> – pylab plot参数，如：marker（标记类型）、markerfacecolor（标记颜色）、markeredgecolor（标记的边缘颜色）</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+<dl class="py function">
+<dt class="sig sig-object py" id="ibar">
+<span class="sig-name descname"><span class="pre">ibar</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">indicator</span></span></em><span class="optional">[</span>, <em class="sig-param"><span class="n"><span class="pre">new=True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">axes=None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">legend_on=False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">text_on=False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">text_color='k'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">label=None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">width=0.4</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">color='r'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edgecolor='r'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">zero_on=False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">*args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">**kwargs</span></span></em><span class="optional">]</span><span class="sig-paren">)</span><a class="headerlink" href="#ibar" title="永久链接至目标"></a></dt>
+<dd><p>绘制indicator柱状图</p>
+<dl class="field-list simple">
+<dt class="field-odd">参数<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>indicator</strong> (<a class="reference internal" href="../indicator/ind_class.html#hikyuu.indicator.Indicator" title="hikyuu.indicator.Indicator"><em>Indicator</em></a>) – Indicator实例</p></li>
+<li><p><strong>axes</strong> – 指定的坐标轴</p></li>
+<li><p><strong>new</strong> – 是否在新窗口中显示，只在没有指定axes时生效</p></li>
+<li><p><strong>legend_on</strong> – 是否打开图例</p></li>
+<li><p><strong>text_on</strong> – 是否在左上角显示指标名称及其参数</p></li>
+<li><p><strong>text_color</strong> – 指标名称解释文字的颜色，默认为黑色</p></li>
+<li><p><strong>label</strong> (<em>str</em>) – label显示文字信息，text_on 及 legend_on 为 True 时生效</p></li>
+<li><p><strong>zero_on</strong> – 是否需要在y=0轴上绘制一条直线</p></li>
+<li><p><strong>width</strong> – Bar的宽度</p></li>
+<li><p><strong>color</strong> – Bar的颜色</p></li>
+<li><p><strong>edgecolor</strong> – Bar边缘颜色</p></li>
+<li><p><strong>args</strong> – pylab plot参数</p></li>
+<li><p><strong>kwargs</strong> – pylab plot参数</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+<dl class="py function">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">iheatmap(ind,</span> <span class="pre">axes=None):</span></span></dt>
+<dd><p>绘制指标收益年-月收益热力图。并非所有指标均可绘制出热力图，详见热力图公式:</p>
+<p>指标收益率 = (当前月末值 - 上月末值) / 上月末值 * 100</p>
+<p>指标应已计算（即有值），且为时间序列</p>
+<dl class="field-list simple">
+<dt class="field-odd">参数<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>ind</strong> – 指定指标</p></li>
+<li><p><strong>axes</strong> – 绘制的轴对象，默认为None，表示创建新的轴对象</p></li>
+</ul>
+</dd>
+<dt class="field-even">返回<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+<dl class="py function">
+<dt class="sig sig-object py" id="sgplot">
+<span class="sig-name descname"><span class="pre">sgplot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sg</span></span></em><span class="optional">[</span>, <em class="sig-param"><span class="n"><span class="pre">new</span> <span class="pre">=</span> <span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">axes</span> <span class="pre">=</span> <span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">style</span> <span class="pre">=</span> <span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kdata</span> <span class="pre">=</span> <span class="pre">None</span></span></em><span class="optional">]</span><span class="sig-paren">)</span><a class="headerlink" href="#sgplot" title="永久链接至目标"></a></dt>
+<dd><p>绘制买入/卖出信号</p>
+<dl class="field-list simple">
+<dt class="field-odd">参数<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>sg</strong> (<a class="reference internal" href="../trade_sys/signal.html#hikyuu.trade_sys.SignalBase" title="hikyuu.trade_sys.SignalBase"><em>SignalBase</em></a>) – 信号指示器</p></li>
+<li><p><strong>new</strong> – 仅在未指定axes的情况下生效，当为True时，创建新的窗口对象并在其中进行绘制</p></li>
+<li><p><strong>axes</strong> – 指定在那个轴对象中进行绘制</p></li>
+<li><p><strong>style</strong> – 1 | 2 信号箭头绘制样式</p></li>
+<li><p><strong>kdata</strong> (<a class="reference internal" href="../base/datatype.html#hikyuu.KData" title="hikyuu.KData"><em>KData</em></a>) – 指定的KData（即信号发生器的交易对象），如该值为None，则认为该信号发生器已经指定了交易对象，否则，使用该参数作为交易对象</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+<dl class="py function">
+<dt class="sig sig-object py" id="cnplot">
+<span class="sig-name descname"><span class="pre">cnplot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cn</span></span></em><span class="optional">[</span>, <em class="sig-param"><span class="n"><span class="pre">new=True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">axes=None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kdata=None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">upcolor='red'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">downcolor='blue'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">alpha=0.2</span></span></em><span class="optional">]</span><span class="sig-paren">)</span><a class="headerlink" href="#cnplot" title="永久链接至目标"></a></dt>
+<dd><p>绘制系统有效条件</p>
+<dl class="field-list simple">
+<dt class="field-odd">参数<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>cn</strong> (<a class="reference internal" href="../trade_sys/condition.html#hikyuu.trade_sys.ConditionBase" title="hikyuu.trade_sys.ConditionBase"><em>ConditionBase</em></a>) – 系统有效条件</p></li>
+<li><p><strong>new</strong> – 仅在未指定axes的情况下生效，当为True时，创建新的窗口对象并在其中进行绘制</p></li>
+<li><p><strong>axes</strong> – 指定在那个轴对象中进行绘制</p></li>
+<li><p><strong>kdata</strong> (<a class="reference internal" href="../base/datatype.html#hikyuu.KData" title="hikyuu.KData"><em>KData</em></a>) – 指定的KData，如该值为None，则认为该系统有效条件已经指定了交易对象，否则，使用该参数作为交易对象</p></li>
+<li><p><strong>upcolor</strong> – 有效数时的颜色</p></li>
+<li><p><strong>downcolor</strong> – 无效时的颜色</p></li>
+<li><p><strong>alpha</strong> – 透明度</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+<dl class="py function">
+<dt class="sig sig-object py" id="evplot">
+<span class="sig-name descname"><span class="pre">evplot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ev</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ref_kdata</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">axes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">upcolor</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'red'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">downcolor</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'blue'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">alpha</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.2</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#evplot" title="永久链接至目标"></a></dt>
+<dd><p>绘制市场有效判断</p>
+<dl class="field-list simple">
+<dt class="field-odd">参数<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>cn</strong> (<a class="reference internal" href="../trade_sys/environment.html#hikyuu.trade_sys.EnvironmentBase" title="hikyuu.trade_sys.EnvironmentBase"><em>EnvironmentBase</em></a>) – 系统有效条件</p></li>
+<li><p><strong>ref_kdata</strong> (<a class="reference internal" href="../base/datatype.html#hikyuu.KData" title="hikyuu.KData"><em>KData</em></a>) – 用于日期参考</p></li>
+<li><p><strong>new</strong> – 仅在未指定axes的情况下生效，当为True时，创建新的窗口对象并在其中进行绘制</p></li>
+<li><p><strong>axes</strong> – 指定在那个轴对象中进行绘制</p></li>
+<li><p><strong>upcolor</strong> – 有效时的颜色</p></li>
+<li><p><strong>downcolor</strong> – 无效时的颜色</p></li>
+<li><p><strong>alpha</strong> – 透明度</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+<dl class="py function">
+<dt class="sig sig-object py" id="sysplot">
+<span class="sig-name descname"><span class="pre">sysplot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sys</span></span></em><span class="optional">[</span>, <em class="sig-param"><span class="n"><span class="pre">new=True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">axes=None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">style=1</span></span></em><span class="optional">]</span><span class="sig-paren">)</span><a class="headerlink" href="#sysplot" title="永久链接至目标"></a></dt>
+<dd><p>绘制系统实际买入/卖出信号</p>
+<dl class="field-list simple">
+<dt class="field-odd">参数<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>sys</strong> (<em>SystemBase</em>) – 系统实例</p></li>
+<li><p><strong>new</strong> – 仅在未指定axes的情况下生效，当为True时，创建新的窗口对象并在其中进行绘制</p></li>
+<li><p><strong>axes</strong> – 指定在那个轴对象中进行绘制</p></li>
+<li><p><strong>style</strong> – 1 | 2 信号箭头绘制样式</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+<dl class="py function">
+<dt class="sig sig-object py" id="sys_performance">
+<span class="sig-name descname"><span class="pre">sys_performance</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sys</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ref_stk</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#sys_performance" title="永久链接至目标"></a></dt>
+<dd><p>绘制系统绩效，即账户累积收益率曲线。通常不直接调用，而是在 sys, pf 计算完成后，查看绩效详情。
+如: sys.performance()</p>
+<dl class="field-list simple">
+<dt class="field-odd">参数<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>sys</strong> (<em>SystemBase</em><em> | </em><em>PortfolioBase</em>) – SYS或PF实例</p></li>
+<li><p><strong>ref_stk</strong> (<a class="reference internal" href="../stock_manager.html#hikyuu.Stock" title="hikyuu.Stock"><em>Stock</em></a>) – 参考股票, 默认为沪深300: sh000300, 绘制参考标的的收益曲线</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+<dl class="py function">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">sys_heatmap(sys,</span> <span class="pre">axes=None):</span></span></dt>
+<dd><p>绘制系统收益年-月收益热力图</p>
+<dl class="field-list simple">
+<dt class="field-odd">参数<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>sys</strong> – SYS 或 PF 实例</p></li>
+<li><p><strong>axes</strong> – 绘制的轴对象, 默认为None, 表示创建新的轴对象</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+</section>
+<section id="id5">
+<h2>内建示例<a class="headerlink" href="#id5" title="Permalink to this heading"></a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="vl.draw">
+<span class="sig-prename descclassname"><span class="pre">vl.</span></span><span class="sig-name descname"><span class="pre">draw</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">stock</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">query</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">Query(-</span> <span class="pre">130)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ma1_n</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ma2_n</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ma3_n</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">20</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ma4_n</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">60</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ma5_n</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ma_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'SMA'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vma1_n</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vma2_n</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#vl.draw" title="永久链接至目标"></a></dt>
+<dd><p>绘制普通K线图 + 成交量（成交金额）</p>
+</dd></dl>
+<dl class="py function">
+<dt class="sig sig-object py" id="vl.draw2">
+<span class="sig-prename descclassname"><span class="pre">vl.</span></span><span class="sig-name descname"><span class="pre">draw2</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">stock</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">query</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">Query(-</span> <span class="pre">130)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ma1_n</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">7</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ma2_n</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">20</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ma3_n</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">30</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ma4_n</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">42</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ma5_n</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vma1_n</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vma2_n</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#vl.draw2" title="永久链接至目标"></a></dt>
+<dd><p>绘制普通K线图 + 成交量（成交金额）+ MACD</p>
+</dd></dl>
+<dl class="py function">
+<dt class="sig sig-object py" id="el.draw">
+<span class="sig-prename descclassname"><span class="pre">el.</span></span><span class="sig-name descname"><span class="pre">draw</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">stock</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">query</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">QueryByIndex(-</span> <span class="pre">130)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ma_n</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">22</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ma_w</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'auto'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vigor_n</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">13</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#el.draw" title="永久链接至目标"></a></dt>
+<dd><p>绘制亚历山大.艾尔德交易系统图形。参见 <a class="reference internal" href="../reference.html#book2" id="id6"><span>[BOOK2]</span></a></p>
+</dd></dl>
+<dl class="py function">
+<dt class="sig sig-object py" id="kf.draw">
+<span class="sig-prename descclassname"><span class="pre">kf.</span></span><span class="sig-name descname"><span class="pre">draw</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">stock</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">query</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">Query(-</span> <span class="pre">130)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filter_n</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">20</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filter_p</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sg_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'CROSS'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show_high_low</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">arrow_style</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#kf.draw" title="永久链接至目标"></a></dt>
+<dd><p>绘制佩里.J.考夫曼（Perry J.Kaufman） 自适应移动平均系统(AMA)。参见 <a class="reference internal" href="../reference.html#book1" id="id7"><span>[BOOK1]</span></a></p>
+</dd></dl>
+<dl class="py function">
+<dt class="sig sig-object py" id="kf.draw2">
+<span class="sig-prename descclassname"><span class="pre">kf.</span></span><span class="sig-name descname"><span class="pre">draw2</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">block</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">query</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">Query(-</span> <span class="pre">130)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ama1</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">AMA(n=10,</span> <span class="pre">fast_n=2,</span> <span class="pre">slow_n=30)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ama2</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filter_n</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">20</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filter_p</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sg_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'CROSS'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show_high_low</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">arrow_style</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#kf.draw2" title="永久链接至目标"></a></dt>
+<dd><p>绘制佩里.J.考夫曼（Perry J.Kaufman） 自适应移动平均系统(AMA)。参见 <a class="reference internal" href="../reference.html#book1" id="id8"><span>[BOOK1]</span></a></p>
+</dd></dl>
+</section>
+</section>
+</div>
+</body>
+</html>

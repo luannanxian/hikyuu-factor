@@ -1,0 +1,214 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+</head>
+<body>
+<div itemprop="articleBody">
+<section id="id1">
+<h1>杂项函数<a class="headerlink" href="#id1" title="Permalink to this heading"></a></h1>
+<p>杂项函数</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="get_market_view">
+<span class="sig-name descname"><span class="pre">get_market_view</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">stks</span></span></em><span class="optional">[</span>, <em class="sig-param"><span class="n"><span class="pre">date=Datetime()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">market='SH'</span></span></em><span class="optional">]</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">→</span> <span class="sig-return-typehint"><span class="pre">pandas.DataFrame</span></span></span><a class="headerlink" href="#get_market_view" title="永久链接至目标"></a></dt>
+<dd><p>获取指定股票集合在指定交易日的行情数据，不包含当日停牌无数据的股票。如未指定日期，则返回最后交易日行情数据，
+如同时接收了行情数据，则为实时行情。</p>
+<p>注: 此函数依赖于日线数据</p>
+<dl class="field-list simple">
+<dt class="field-odd">参数<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>stks</strong> (<em>list</em><em>[</em><a class="reference internal" href="stock_manager.html#hikyuu.Stock" title="hikyuu.Stock"><em>Stock</em></a><em>]</em>) – 股票列表</p></li>
+<li><p><strong>date</strong> (<a class="reference internal" href="base/datatype.html#hikyuu.Datetime" title="hikyuu.Datetime"><em>Datetime</em></a>) – 获取指定日期的行情数据</p></li>
+<li><p><strong>market</strong> (<em>str</em>) – 市场代码</p></li>
+</ul>
+</dd>
+<dt class="field-even">返回<span class="colon">:</span></dt>
+<dd class="field-even"><p>指定股票列表最后行情数据</p>
+</dd>
+<dt class="field-odd">返回类型<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pandas.DataFrame</p>
+</dd>
+</dl>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>In [2]: get_market_view([s for s in sm])
+Out[2]:
+    证券代码        证券名称       日期     开盘价     最高价     最低价     收盘价  ...  涨跌幅（%）    振幅(%)  换手率(%)        总市值      流通市值    市净率  动态市盈率
+0     SZ301632       C广东建科 2025-08-13     32.840     46.580     32.040     43.600  ...    28.197589  44.275274  78.480086  1.824922e+06  3.002447e+05  6.827756 -272.500006
+1     SZ159271     恒生指数ETF 2025-08-13      1.002      1.016      1.002      1.016  ...     1.905717   1.397206        NaN           NaN           NaN       NaN         NaN
+2     SH589850   科创50ETF东财 2025-08-13      1.018      1.029      1.017      1.026  ...     0.489716   1.178782        NaN           NaN           NaN       NaN         NaN
+3     SZ180901        润泽REIT 2025-08-13      6.120      6.139      6.040      6.090  ...    -0.620104   1.617647        NaN           NaN           NaN       NaN         NaN
+4     SH589200  科创200ETF工银 2025-08-13      1.037      1.065      1.037      1.063  ...     2.507232   2.700096        NaN           NaN           NaN       NaN         NaN
+...        ...             ...        ...        ...        ...        ...        ...  ...          ...        ...        ...           ...           ...       ...         ...
+8060  SH600159        大龙地产 2025-08-13      3.000      3.000      2.920      2.930  ...    -1.677852   2.666667   1.624909  2.431909e+05  2.431909e+05  1.408722 -732.499965
+8061  SZ000548        湖南投资 2025-08-13      5.670      5.700      5.630      5.640  ...    -0.529101   1.234568   1.362903  2.815577e+05  2.815399e+05  1.369198   35.250001
+8062  SH603180        金牌家居 2025-08-13     21.260     21.410     20.930     20.970  ...    -1.317647   2.257761   0.946926  3.234771e+05  3.234771e+05  1.153155   22.793478
+8063  SH601003        柳钢股份 2025-08-13      6.060      6.090      6.010      6.040  ...    -0.330033   1.320132   1.529113  1.547927e+06  1.547927e+06  1.792604   15.100000
+8064  SH000129         180波动 2025-08-13  15259.241  15280.421  15175.761  15190.970  ...    -0.368136   0.685879        NaN           NaN           NaN       NaN         NaN
+
+[8065 rows x 17 columns]
+
+In [3]: get_market_view([s for s in sm], Datetime(20250812))
+Out[3]:
+    证券代码        证券名称       日期     开盘价     最高价     最低价     收盘价  ...  涨跌幅（%）    振幅(%)  换手率(%)        总市值      流通市值    市净率  动态市盈率
+0     SZ301632       C广东建科 2025-08-12     32.660     40.000     30.020     34.010  ...     4.133497  30.557257  84.592471  1.423523e+06  2.342046e+05  5.325963 -212.562505
+1     SZ159271     恒生指数ETF 2025-08-12      0.993      0.997      0.991      0.997  ...     0.402820   0.604230        NaN           NaN           NaN       NaN         NaN
+2     SH589850   科创50ETF东财 2025-08-12      1.001      1.027      0.996      1.021  ...     1.998002   3.096903        NaN           NaN           NaN       NaN         NaN
+3     SZ180901        润泽REIT 2025-08-12      6.006      6.145      6.003      6.128  ...     1.038747   2.364302        NaN           NaN           NaN       NaN         NaN
+4     SH589200  科创200ETF工银 2025-08-12      1.035      1.039      1.020      1.037  ...    -0.096339   1.835749        NaN           NaN           NaN       NaN         NaN
+...        ...             ...        ...        ...        ...        ...        ...  ...          ...        ...        ...           ...           ...       ...         ...
+8059  SH600159        大龙地产 2025-08-12      2.990      3.020      2.940      2.980  ...    -0.334448   2.675585   2.259280  2.473410e+05  2.473410e+05  1.432761 -744.999965
+8060  SZ000548        湖南投资 2025-08-12      5.670      5.700      5.640      5.670  ...     0.176678   1.058201   1.138197  2.830554e+05  2.830375e+05  1.376481   35.437501
+8061  SH603180        金牌家居 2025-08-12     21.430     21.520     21.210     21.250  ...    -0.793651   1.446570   0.703566  3.277963e+05  3.277963e+05  1.168552   23.097826
+8062  SH601003        柳钢股份 2025-08-12      6.110      6.180      6.040      6.060  ...    -0.818331   2.291326   1.396695  1.553053e+06  1.553053e+06  1.798540   15.150000
+8063  SH000129         180波动 2025-08-12  15230.810  15321.111  15229.380  15247.100  ...     0.206570   0.602273        NaN           NaN           NaN       NaN         NaN
+
+[8064 rows x 17 columns]
+</pre></div>
+</div>
+</dd></dl>
+<dl class="py function">
+<dt class="sig sig-object py" id="concat_to_df">
+<span class="sig-name descname"><span class="pre">concat_to_df</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dates</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ind_list</span></span></em><span class="optional">[</span>, <em class="sig-param"><span class="n"><span class="pre">head_stock_code=True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">head_ind_name=False</span></span></em><span class="optional">]</span><span class="sig-paren">)</span><a class="headerlink" href="#concat_to_df" title="永久链接至目标"></a></dt>
+<dd><p>将列表中的指标至合并在一张 pandas DataFrame 中</p>
+<dl class="field-list simple">
+<dt class="field-odd">参数<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>dates</strong> (<a class="reference internal" href="base/other_utils.html#hikyuu.DatetimeList" title="hikyuu.DatetimeList"><em>DatetimeList</em></a>) – 指定的日期列表</p></li>
+<li><p><strong>ind_list</strong> (<em>sequence</em>) – 已计算的指标列表</p></li>
+<li><p><strong>head_ind_name</strong> (<em>bool</em>) – 表标题是否使用指标名称</p></li>
+<li><p><strong>head_stock_code</strong> (<em>bool</em>) – 表标题是否使用证券代码</p></li>
+</ul>
+</dd>
+<dt class="field-even">返回<span class="colon">:</span></dt>
+<dd class="field-even"><p>合并后的 DataFrame, 以 dates 为 index（注: dates列 为 Datetime 类型）</p>
+</dd>
+</dl>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">query</span> <span class="o">=</span> <span class="n">Query</span><span class="p">(</span><span class="o">-</span><span class="mi">200</span><span class="p">)</span>
+<span class="n">k_list</span> <span class="o">=</span> <span class="p">[</span><span class="n">stk</span><span class="o">.</span><span class="n">get_kdata</span><span class="p">(</span><span class="n">query</span><span class="p">)</span> <span class="k">for</span> <span class="n">stk</span> <span class="ow">in</span> <span class="p">[</span><span class="n">sm</span><span class="p">[</span><span class="s1">'sz000001'</span><span class="p">],</span> <span class="n">sm</span><span class="p">[</span><span class="s1">'sz000002'</span><span class="p">]]]</span>
+<span class="n">ma_list</span> <span class="o">=</span> <span class="p">[</span><span class="n">MA</span><span class="p">(</span><span class="n">CLOSE</span><span class="p">(</span><span class="n">k</span><span class="p">))</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">k_list</span><span class="p">]</span>
+<span class="n">df</span> <span class="o">=</span> <span class="n">concat_to_df</span><span class="p">(</span><span class="n">sm</span><span class="o">.</span><span class="n">get_trading_calendar</span><span class="p">(</span><span class="n">query</span><span class="p">),</span> <span class="n">ma_list</span><span class="p">,</span> <span class="n">head_stock_code</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">head_ind_name</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="n">df</span>
+
+        <span class="n">date</span>    <span class="n">SZ000001</span>        <span class="n">SZ000002</span>
+<span class="mi">0</span>       <span class="mi">2023</span><span class="o">-</span><span class="mi">05</span><span class="o">-</span><span class="mi">12</span> <span class="mi">00</span><span class="p">:</span><span class="mi">00</span><span class="p">:</span><span class="mi">00</span>     <span class="mf">12.620000</span>       <span class="mf">15.060000</span>
+<span class="mi">1</span>       <span class="mi">2023</span><span class="o">-</span><span class="mi">05</span><span class="o">-</span><span class="mi">15</span> <span class="mi">00</span><span class="p">:</span><span class="mi">00</span><span class="p">:</span><span class="mi">00</span>     <span class="mf">12.725000</span>       <span class="mf">15.060000</span>
+<span class="mi">2</span>       <span class="mi">2023</span><span class="o">-</span><span class="mi">05</span><span class="o">-</span><span class="mi">16</span> <span class="mi">00</span><span class="p">:</span><span class="mi">00</span><span class="p">:</span><span class="mi">00</span>     <span class="mf">12.690000</span>       <span class="mf">15.010000</span>
+<span class="mi">3</span>       <span class="mi">2023</span><span class="o">-</span><span class="mi">05</span><span class="o">-</span><span class="mi">17</span> <span class="mi">00</span><span class="p">:</span><span class="mi">00</span><span class="p">:</span><span class="mi">00</span>     <span class="mf">12.640000</span>       <span class="mf">14.952500</span>
+<span class="mi">4</span>       <span class="mi">2023</span><span class="o">-</span><span class="mi">05</span><span class="o">-</span><span class="mi">18</span> <span class="mi">00</span><span class="p">:</span><span class="mi">00</span><span class="p">:</span><span class="mi">00</span>     <span class="mf">12.610000</span>       <span class="mf">14.886000</span>
+<span class="o">...</span>     <span class="o">...</span>     <span class="o">...</span>     <span class="o">...</span>
+<span class="mi">195</span>     <span class="mi">2024</span><span class="o">-</span><span class="mi">03</span><span class="o">-</span><span class="mi">01</span> <span class="mi">00</span><span class="p">:</span><span class="mi">00</span><span class="p">:</span><span class="mi">00</span>     <span class="mf">9.950455</span>        <span class="mf">9.837273</span>
+<span class="mi">196</span>     <span class="mi">2024</span><span class="o">-</span><span class="mi">03</span><span class="o">-</span><span class="mi">04</span> <span class="mi">00</span><span class="p">:</span><span class="mi">00</span><span class="p">:</span><span class="mi">00</span>     <span class="mf">9.995909</span>        <span class="mf">9.838182</span>
+<span class="mi">197</span>     <span class="mi">2024</span><span class="o">-</span><span class="mi">03</span><span class="o">-</span><span class="mi">05</span> <span class="mi">00</span><span class="p">:</span><span class="mi">00</span><span class="p">:</span><span class="mi">00</span>     <span class="mf">10.038182</span>       <span class="mf">9.816364</span>
+<span class="mi">198</span>     <span class="mi">2024</span><span class="o">-</span><span class="mi">03</span><span class="o">-</span><span class="mi">06</span> <span class="mi">00</span><span class="p">:</span><span class="mi">00</span><span class="p">:</span><span class="mi">00</span>     <span class="mf">10.070455</span>       <span class="mf">9.776818</span>
+<span class="mi">199</span>     <span class="mi">2024</span><span class="o">-</span><span class="mi">03</span><span class="o">-</span><span class="mi">07</span> <span class="mi">00</span><span class="p">:</span><span class="mi">00</span><span class="p">:</span><span class="mi">00</span>     <span class="mf">10.101364</span>       <span class="mf">9.738182</span>
+</pre></div>
+</div>
+</dd></dl>
+<dl class="py function">
+<dt class="sig sig-object py" id="get_inds_view">
+<span class="sig-name descname"><span class="pre">get_inds_view</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">inds</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dates</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">query</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">market</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'SH'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#get_inds_view" title="永久链接至目标"></a></dt>
+<dd><p>方式1: 获取指定日期的各证券的各指标结果</p>
+<blockquote>
+<div><dl class="field-list simple">
+<dt class="field-odd">param stks<span class="colon">:</span></dt>
+<dd class="field-odd"><p>证券列表</p>
+</dd>
+<dt class="field-even">param list[Indicator] inds<span class="colon">:</span></dt>
+<dd class="field-even"><p>指标列表</p>
+</dd>
+<dt class="field-odd">param Datetime date<span class="colon">:</span></dt>
+<dd class="field-odd"><p>指定日期</p>
+</dd>
+<dt class="field-even">param int cal_len<span class="colon">:</span></dt>
+<dd class="field-even"><p>计算需要的数据长度</p>
+</dd>
+<dt class="field-odd">param str ktype<span class="colon">:</span></dt>
+<dd class="field-odd"><p>k线类型</p>
+</dd>
+<dt class="field-even">param str market<span class="colon">:</span></dt>
+<dd class="field-even"><p>指定行情市场（用于日期对齐）</p>
+</dd>
+</dl>
+</div></blockquote>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">In</span> <span class="p">[</span><span class="mi">4</span><span class="p">]:</span> <span class="n">get_inds_view</span><span class="p">(</span><span class="n">sm</span><span class="p">,</span> <span class="p">[</span><span class="n">OPEN</span><span class="p">(),</span><span class="n">CLOSE</span><span class="p">(),</span><span class="n">MA</span><span class="p">(</span><span class="n">CLOSE</span><span class="p">()),</span> <span class="n">AMA</span><span class="p">(</span><span class="n">CLOSE</span><span class="p">()),</span> <span class="n">MA</span><span class="p">(</span><span class="n">CLOSE</span><span class="p">(),</span> <span class="mi">20</span><span class="p">)],</span> <span class="n">Datetime</span><span class="p">(</span><span class="mi">20250822</span><span class="p">))</span>
+<span class="n">Out</span><span class="p">[</span><span class="mi">4</span><span class="p">]:</span>
+    <span class="n">证券代码</span>               <span class="n">证券名称</span>   <span class="n">交易时间</span>      <span class="n">OPEN</span>     <span class="n">CLOSE</span>           <span class="n">MA</span>          <span class="n">AMA</span>           <span class="n">MA</span>
+<span class="mi">0</span>     <span class="n">SZ399295</span>                 <span class="n">创价值</span> <span class="mi">2025</span><span class="o">-</span><span class="mi">08</span><span class="o">-</span><span class="mi">22</span>  <span class="mf">4928.540</span>  <span class="mf">5041.720</span>  <span class="mf">4710.365909</span>  <span class="mf">4909.715525</span>  <span class="mf">4718.344500</span>
+<span class="mi">1</span>     <span class="n">SH688630</span>               <span class="n">芯碁微装</span> <span class="mi">2025</span><span class="o">-</span><span class="mi">08</span><span class="o">-</span><span class="mi">22</span>   <span class="mf">124.110</span>   <span class="mf">129.000</span>   <span class="mf">124.648182</span>   <span class="mf">129.966137</span>   <span class="mf">127.810500</span>
+<span class="mi">2</span>     <span class="n">SH600605</span>               <span class="n">汇通能源</span> <span class="mi">2025</span><span class="o">-</span><span class="mi">08</span><span class="o">-</span><span class="mi">22</span>    <span class="mf">35.250</span>    <span class="mf">34.910</span>    <span class="mf">37.600000</span>    <span class="mf">37.489924</span>    <span class="mf">37.400000</span>
+<span class="mi">3</span>     <span class="n">SH000852</span>               <span class="n">中证1000</span> <span class="mi">2025</span><span class="o">-</span><span class="mi">08</span><span class="o">-</span><span class="mi">22</span>  <span class="mf">7250.190</span>  <span class="mf">7362.940</span>  <span class="mf">6932.661364</span>  <span class="mf">7184.920216</span>  <span class="mf">6955.541000</span>
+<span class="mi">4</span>     <span class="n">SH000001</span>               <span class="n">上证指数</span> <span class="mi">2025</span><span class="o">-</span><span class="mi">08</span><span class="o">-</span><span class="mi">22</span>  <span class="mf">3772.280</span>  <span class="mf">3825.760</span>  <span class="mf">3656.552273</span>  <span class="mf">3753.987779</span>  <span class="mf">3662.238000</span>
+<span class="o">...</span>        <span class="o">...</span>                    <span class="o">...</span>        <span class="o">...</span>       <span class="o">...</span>       <span class="o">...</span>          <span class="o">...</span>          <span class="o">...</span>          <span class="o">...</span>
+<span class="mi">8479</span>  <span class="n">BJ920101</span>               <span class="n">志高机械</span> <span class="mi">2025</span><span class="o">-</span><span class="mi">08</span><span class="o">-</span><span class="mi">22</span>    <span class="mf">52.630</span>    <span class="mf">52.300</span>    <span class="mf">54.744286</span>    <span class="mf">54.284372</span>    <span class="mf">54.744286</span>
+<span class="mi">8480</span>  <span class="n">SZ159280</span>  <span class="n">港股通互联网ETF汇添富</span> <span class="mi">2025</span><span class="o">-</span><span class="mi">08</span><span class="o">-</span><span class="mi">22</span>     <span class="mf">1.019</span>     <span class="mf">1.031</span>     <span class="mf">1.032600</span>     <span class="mf">1.031993</span>     <span class="mf">1.032600</span>
+<span class="mi">8481</span>  <span class="n">SH563620</span>      <span class="n">自由现金流全指ETF</span> <span class="mi">2025</span><span class="o">-</span><span class="mi">08</span><span class="o">-</span><span class="mi">22</span>     <span class="mf">1.012</span>     <span class="mf">1.013</span>     <span class="mf">1.011667</span>     <span class="mf">1.011238</span>     <span class="mf">1.011667</span>
+<span class="mi">8482</span>  <span class="n">SZ159369</span>      <span class="n">创业板50ETF易方达</span> <span class="mi">2025</span><span class="o">-</span><span class="mi">08</span><span class="o">-</span><span class="mi">22</span>     <span class="mf">1.002</span>     <span class="mf">1.039</span>     <span class="mf">1.024000</span>     <span class="mf">1.022333</span>     <span class="mf">1.024000</span>
+<span class="mi">8483</span>  <span class="n">SZ159283</span>        <span class="n">通用航空ETF南方</span> <span class="mi">2025</span><span class="o">-</span><span class="mi">08</span><span class="o">-</span><span class="mi">22</span>     <span class="mf">1.006</span>     <span class="mf">1.026</span>     <span class="mf">1.016500</span>     <span class="mf">1.015444</span>     <span class="mf">1.016500</span>
+
+<span class="p">[</span><span class="mi">8484</span> <span class="n">rows</span> <span class="n">x</span> <span class="mi">8</span> <span class="n">columns</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>方式2: 获取按指定Query查询计算的各证券的各指标结果, 结果中将包含指定 Query 包含的所有指定市场交易日日期</p>
+<p>get_inds_view(stks, inds, date[, cal_len=100, ktype=Query.DAY, market=’SH’]) -&gt; pandas.DataFrame</p>
+<blockquote>
+<div><dl class="field-list simple">
+<dt class="field-odd">param stks<span class="colon">:</span></dt>
+<dd class="field-odd"><p>指定证券列表</p>
+</dd>
+<dt class="field-even">param list[Indicator] inds<span class="colon">:</span></dt>
+<dd class="field-even"><p>指定指标列表</p>
+</dd>
+<dt class="field-odd">param Query query<span class="colon">:</span></dt>
+<dd class="field-odd"><p>查询条件</p>
+</dd>
+<dt class="field-even">param str market<span class="colon">:</span></dt>
+<dd class="field-even"><p>指定行情市场（用于日期对齐）</p>
+</dd>
+</dl>
+</div></blockquote>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">In</span> <span class="p">[</span><span class="mi">5</span><span class="p">]:</span> <span class="n">get_inds_view</span><span class="p">(</span><span class="n">sm</span><span class="p">,</span> <span class="p">[</span><span class="n">OPEN</span><span class="p">(),</span><span class="n">CLOSE</span><span class="p">(),</span><span class="n">MA</span><span class="p">(</span><span class="n">CLOSE</span><span class="p">()),</span> <span class="n">AMA</span><span class="p">(</span><span class="n">CLOSE</span><span class="p">()),</span> <span class="n">MA</span><span class="p">(</span><span class="n">CLOSE</span><span class="p">(),</span> <span class="mi">20</span><span class="p">)],</span> <span class="n">Query</span><span class="p">(</span><span class="o">-</span><span class="mi">2000</span><span class="p">))</span>
+<span class="n">Out</span><span class="p">[</span><span class="mi">5</span><span class="p">]:</span>
+        <span class="n">证券代码</span>         <span class="n">证券名称</span>   <span class="n">交易时间</span>      <span class="n">OPEN</span>     <span class="n">CLOSE</span>           <span class="n">MA</span>          <span class="n">AMA</span>           <span class="n">MA</span>
+<span class="mi">0</span>         <span class="n">SZ399295</span>           <span class="n">创价值</span> <span class="mi">2017</span><span class="o">-</span><span class="mi">06</span><span class="o">-</span><span class="mi">05</span>  <span class="mf">3000.070</span>  <span class="mf">3003.850</span>  <span class="mf">3003.850000</span>  <span class="mf">3003.850000</span>  <span class="mf">3003.850000</span>
+<span class="mi">1</span>         <span class="n">SZ399295</span>           <span class="n">创价值</span> <span class="mi">2017</span><span class="o">-</span><span class="mi">06</span><span class="o">-</span><span class="mi">06</span>  <span class="mf">2998.360</span>  <span class="mf">3011.500</span>  <span class="mf">3007.675000</span>  <span class="mf">3007.250000</span>  <span class="mf">3007.675000</span>
+<span class="mi">2</span>         <span class="n">SZ399295</span>           <span class="n">创价值</span> <span class="mi">2017</span><span class="o">-</span><span class="mi">06</span><span class="o">-</span><span class="mi">07</span>  <span class="mf">3004.490</span>  <span class="mf">3065.660</span>  <span class="mf">3027.003333</span>  <span class="mf">3033.210000</span>  <span class="mf">3027.003333</span>
+<span class="mi">3</span>         <span class="n">SZ399295</span>           <span class="n">创价值</span> <span class="mi">2017</span><span class="o">-</span><span class="mi">06</span><span class="o">-</span><span class="mi">08</span>  <span class="mf">3058.980</span>  <span class="mf">3058.970</span>  <span class="mf">3034.995000</span>  <span class="mf">3040.975491</span>  <span class="mf">3034.995000</span>
+<span class="mi">4</span>         <span class="n">SZ399295</span>           <span class="n">创价值</span> <span class="mi">2017</span><span class="o">-</span><span class="mi">06</span><span class="o">-</span><span class="mi">09</span>  <span class="mf">3055.200</span>  <span class="mf">3060.110</span>  <span class="mf">3040.018000</span>  <span class="mf">3046.784218</span>  <span class="mf">3040.018000</span>
+<span class="o">...</span>            <span class="o">...</span>              <span class="o">...</span>        <span class="o">...</span>       <span class="o">...</span>       <span class="o">...</span>          <span class="o">...</span>          <span class="o">...</span>          <span class="o">...</span>
+<span class="mi">16367995</span>  <span class="n">SZ159283</span>  <span class="n">通用航空ETF南方</span> <span class="mi">2025</span><span class="o">-</span><span class="mi">08</span><span class="o">-</span><span class="mi">18</span>       <span class="n">NaN</span>       <span class="n">NaN</span>          <span class="n">NaN</span>          <span class="n">NaN</span>          <span class="n">NaN</span>
+<span class="mi">16367996</span>  <span class="n">SZ159283</span>  <span class="n">通用航空ETF南方</span> <span class="mi">2025</span><span class="o">-</span><span class="mi">08</span><span class="o">-</span><span class="mi">19</span>       <span class="n">NaN</span>       <span class="n">NaN</span>          <span class="n">NaN</span>          <span class="n">NaN</span>          <span class="n">NaN</span>
+<span class="mi">16367997</span>  <span class="n">SZ159283</span>  <span class="n">通用航空ETF南方</span> <span class="mi">2025</span><span class="o">-</span><span class="mi">08</span><span class="o">-</span><span class="mi">20</span>       <span class="n">NaN</span>       <span class="n">NaN</span>          <span class="n">NaN</span>          <span class="n">NaN</span>          <span class="n">NaN</span>
+<span class="mi">16367998</span>  <span class="n">SZ159283</span>  <span class="n">通用航空ETF南方</span> <span class="mi">2025</span><span class="o">-</span><span class="mi">08</span><span class="o">-</span><span class="mi">21</span>     <span class="mf">1.012</span>     <span class="mf">1.007</span>     <span class="mf">1.007000</span>     <span class="mf">1.007000</span>     <span class="mf">1.007000</span>
+<span class="mi">16367999</span>  <span class="n">SZ159283</span>  <span class="n">通用航空ETF南方</span> <span class="mi">2025</span><span class="o">-</span><span class="mi">08</span><span class="o">-</span><span class="mi">22</span>     <span class="mf">1.006</span>     <span class="mf">1.026</span>     <span class="mf">1.016500</span>     <span class="mf">1.015444</span>     <span class="mf">1.016500</span>
+
+<span class="p">[</span><span class="mi">16368000</span> <span class="n">rows</span> <span class="n">x</span> <span class="mi">8</span> <span class="n">columns</span><span class="p">]</span>
+</pre></div>
+</div>
+</dd></dl>
+<dl class="py function">
+<dt class="sig sig-object py" id="df_to_ind">
+<span class="sig-name descname"><span class="pre">df_to_ind</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">col_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">col_date</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#df_to_ind" title="永久链接至目标"></a></dt>
+<dd><p>将 pandas.DataFrame 指定列转化为 Indicator</p>
+<dl class="field-list simple">
+<dt class="field-odd">参数<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>df</strong> – pandas.DataFrame</p></li>
+<li><p><strong>col_name</strong> – 指定列名</p></li>
+<li><p><strong>col_date</strong> – 指定日期列名 (为None时忽略, 否则该列为对应参考日期)</p></li>
+</ul>
+</dd>
+<dt class="field-even">返回<span class="colon">:</span></dt>
+<dd class="field-even"><p>Indicator</p>
+</dd>
+</dl>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># 示例, 从 akshare 获取美国国债10年期收益率:</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">akshare</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">ak</span>
+<span class="n">df</span> <span class="o">=</span> <span class="n">ak</span><span class="o">.</span><span class="n">bond_zh_us_rate</span><span class="p">(</span><span class="s2">"19901219"</span><span class="p">)</span>
+<span class="n">x</span> <span class="o">=</span> <span class="n">df_to_ind</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="s1">'美国国债收益率10年'</span><span class="p">,</span> <span class="s1">'日期'</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+</section>
+</div>
+</body>
+</html>

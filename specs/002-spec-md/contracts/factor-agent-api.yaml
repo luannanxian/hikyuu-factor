@@ -1,0 +1,258 @@
+openapi: 3.0.3
+info:
+  title: A股量化因子系统 - 因子计算Agent API
+  description: 基于Hikyuu框架的因子计算、存储、版本管理Agent接口
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:8002/api/v1
+    description: 因子计算Agent服务
+
+paths:
+  /factors:
+    get:
+      summary: 获取因子列表
+      description: 获取系统中的因子定义列表
+      parameters:
+        - name: category
+          in: query
+          description: 因子分类过滤
+          schema:
+            type: string
+            enum: [momentum, value, quality, growth, risk, technical]
+        - name: status
+          in: query
+          description: 因子状态过滤
+          schema:
+            type: string
+            enum: [draft, testing, validated, production, deprecated]
+      responses:
+        '200':
+          description: 成功获取因子列表
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/FactorDefinition'
+
+    post:
+      summary: 注册新因子
+      description: 创建新的因子定义，基于Hikyuu指标库
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  example: "20日动量因子"
+                category:
+                  type: string
+                  enum: [momentum, value, quality, growth, risk, technical]
+                hikyuu_formula:
+                  type: string
+                  description: 基于Hikyuu的计算公式
+                  example: "MA(CLOSE(), 20) / MA(CLOSE(), 5) - 1"
+                economic_logic:
+                  type: string
+                  minLength: 50
+                  description: 经济逻辑说明
+                parameters:
+                  type: object
+                  description: 因子参数配置
+      responses:
+        '201':
+          description: 因子创建成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  data:
+                    $ref: '#/components/schemas/FactorDefinition'
+
+  /factors/{factor_id}/calculate:
+    post:
+      summary: 计算因子值
+      description: 使用Hikyuu引擎为指定股票池计算因子值，支持平台自适应优化
+      parameters:
+        - name: factor_id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                stock_universe:
+                  type: array
+                  items:
+                    type: string
+                  example: ["sh000001", "sz000002"]
+                date_range:
+                  type: object
+                  properties:
+                    start_date:
+                      type: string
+                      format: date
+                      example: "2020-01-01"
+                    end_date:
+                      type: string
+                      format: date
+                      example: "2023-12-31"
+                optimization_config:
+                  type: object
+                  description: 平台优化配置 (可选，默认自动检测)
+                  properties:
+                    platform_override:
+                      type: string
+                      enum: [apple_silicon, x86_64, arm64_linux, generic]
+                      description: 强制指定平台类型
+                    process_count:
+                      type: integer
+                      minimum: 1
+                      maximum: 32
+                      description: 并行进程数 (覆盖自动检测)
+                    low_precision_mode:
+                      type: boolean
+                      description: 是否启用低精度模式 (ARM优化)
+              required:
+                - stock_universe
+                - date_range
+                stock_codes:
+                  type: array
+                  items:
+                    type: string
+                  description: Hikyuu股票代码列表
+                query_config:
+                  type: object
+                  properties:
+                    start_date:
+                      type: string
+                      format: date
+                    end_date:
+                      type: string
+                      format: date
+                    ktype:
+                      type: string
+                      enum: [DAY, WEEK, MONTH, MIN5, MIN15, MIN30, MIN60]
+                      default: DAY
+      responses:
+        '202':
+          description: 计算任务已启动
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  task_id:
+                    type: string
+                  estimated_duration:
+                    type: integer
+
+  /factors/{factor_id}/values:
+    get:
+      summary: 获取因子值
+      description: 获取基于Hikyuu计算的因子结果
+      parameters:
+        - name: factor_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: stock_codes
+          in: query
+          description: Hikyuu股票代码
+          schema:
+            type: string
+            example: "sh000001,sz000002"
+        - name: query_range
+          in: query
+          description: Hikyuu Query对象配置
+          schema:
+            type: string
+            example: "Query(-100)"  # 最近100个交易日
+      responses:
+        '200':
+          description: 成功获取因子值
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  data:
+                    type: object
+                    properties:
+                      factor_id:
+                        type: string
+                      values:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            stock_code:
+                              type: string
+                            datetime:
+                              type: string
+                              format: date-time
+                            value:
+                              type: number
+                            hikyuu_context:
+                              type: object
+                              description: Hikyuu计算上下文信息
+
+components:
+  schemas:
+    FactorDefinition:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        category:
+          type: string
+        hikyuu_formula:
+          type: string
+          description: 基于Hikyuu指标的计算公式
+        economic_logic:
+          type: string
+        version:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        status:
+          type: string
+        hikyuu_dependencies:
+          type: array
+          items:
+            type: string
+          description: 依赖的Hikyuu指标或数据
+
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+
+security:
+  - ApiKeyAuth: []

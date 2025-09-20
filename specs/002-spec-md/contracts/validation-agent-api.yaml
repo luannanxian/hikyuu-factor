@@ -1,0 +1,305 @@
+openapi: 3.0.3
+info:
+  title: A股量化因子系统 - 因子验证Agent API
+  description: 基于Hikyuu回测引擎的因子验证、报告生成Agent接口，支持可配置验证周期
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:8003/api/v1
+    description: 因子验证Agent服务
+
+paths:
+  /validation/start:
+    post:
+      summary: 启动因子验证
+      description: 使用Hikyuu回测引擎验证因子有效性，支持自定义验证周期
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                factor_id:
+                  type: string
+                  description: 要验证的因子ID
+                validation_config:
+                  $ref: '#/components/schemas/ValidationConfig'
+                analysis_types:
+                  type: array
+                  items:
+                    type: string
+                    enum: [ic_analysis, layered_returns, turnover_analysis, long_short_analysis]
+                  description: 分析类型
+                stock_universe:
+                  type: array
+                  items:
+                    type: string
+                  description: 股票池，不指定则使用全市场
+              required: [factor_id]
+      responses:
+        '202':
+          description: 验证任务已启动
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "accepted"
+                  task_id:
+                    type: string
+                  estimated_duration:
+                    type: integer
+                    description: 预估完成时间（分钟）
+
+  /validation/{task_id}/status:
+    get:
+      summary: 查询验证任务状态
+      parameters:
+        - name: task_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 任务状态信息
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  task_id:
+                    type: string
+                  status:
+                    type: string
+                    enum: [pending, running, completed, failed]
+                  progress:
+                    type: number
+                    minimum: 0
+                    maximum: 1
+                  current_phase:
+                    type: string
+                    enum: [train, test, validation]
+                  start_time:
+                    type: string
+                    format: date-time
+                  end_time:
+                    type: string
+                    format: date-time
+                  error_message:
+                    type: string
+
+  /validation/{task_id}/report:
+    get:
+      summary: 获取验证报告
+      parameters:
+        - name: task_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: format
+          in: query
+          description: 报告格式
+          schema:
+            type: string
+            enum: [json, pdf, html]
+            default: json
+      responses:
+        '200':
+          description: 验证报告
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  data:
+                    $ref: '#/components/schemas/ValidationReport'
+
+  /validation/configs/presets:
+    get:
+      summary: 获取预设验证配置
+      description: 获取常用的验证周期配置模板
+      responses:
+        '200':
+          description: 预设配置列表
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        name:
+                          type: string
+                          example: "标准配置"
+                        description:
+                          type: string
+                          example: "适用于大多数因子验证的标准时间划分"
+                        config:
+                          $ref: '#/components/schemas/ValidationConfig'
+
+  /validation/configs/validate:
+    post:
+      summary: 验证配置合理性
+      description: 检查验证周期配置是否合理
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ValidationConfig'
+      responses:
+        '200':
+          description: 配置验证结果
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  valid:
+                    type: boolean
+                  issues:
+                    type: array
+                    items:
+                      type: string
+                  recommendations:
+                    type: array
+                    items:
+                      type: string
+
+components:
+  schemas:
+    ValidationConfig:
+      type: object
+      description: 可配置的验证参数
+      properties:
+        train_period:
+          $ref: '#/components/schemas/DateRange'
+        test_period:
+          $ref: '#/components/schemas/DateRange'
+        validation_period:
+          $ref: '#/components/schemas/DateRange'
+        custom_params:
+          type: object
+          description: 自定义验证参数
+          properties:
+            min_samples_per_period:
+              type: integer
+              default: 252
+              description: 每个周期最少样本数（交易日）
+            overlap_allowed:
+              type: boolean
+              default: false
+              description: 是否允许周期重叠
+      required: [train_period, test_period, validation_period]
+      example:
+        train_period:
+          start_date: "2010-01-01"
+          end_date: "2016-12-31"
+        test_period:
+          start_date: "2017-01-01"
+          end_date: "2020-12-31"
+        validation_period:
+          start_date: "2021-01-01"
+          end_date: "2025-01-15"
+
+    DateRange:
+      type: object
+      properties:
+        start_date:
+          type: string
+          format: date
+        end_date:
+          type: string
+          format: date
+      required: [start_date, end_date]
+
+    ValidationReport:
+      type: object
+      properties:
+        id:
+          type: string
+        factor_id:
+          type: string
+        validation_config:
+          $ref: '#/components/schemas/ValidationConfig'
+        results:
+          type: object
+          properties:
+            train_phase:
+              $ref: '#/components/schemas/PhaseResult'
+            test_phase:
+              $ref: '#/components/schemas/PhaseResult'
+            validation_phase:
+              $ref: '#/components/schemas/PhaseResult'
+            summary:
+              type: object
+              properties:
+                overall_score:
+                  type: number
+                  minimum: 0
+                  maximum: 1
+                recommendation:
+                  type: string
+                  enum: [accept, reject, investigate_further]
+                confidence_level:
+                  type: string
+                  enum: [high, medium, low]
+        generated_at:
+          type: string
+          format: date-time
+
+    PhaseResult:
+      type: object
+      properties:
+        period:
+          $ref: '#/components/schemas/DateRange'
+        ic_metrics:
+          type: object
+          properties:
+            rank_ic_mean:
+              type: number
+            rank_ic_std:
+              type: number
+            ic_ir:
+              type: number
+            ic_win_rate:
+              type: number
+        layered_returns:
+          type: object
+          properties:
+            num_layers:
+              type: integer
+            layer_returns:
+              type: object
+              additionalProperties:
+                type: number
+            long_short_return:
+              type: number
+        turnover_analysis:
+          type: object
+          properties:
+            average_turnover:
+              type: number
+            turnover_volatility:
+              type: number
+
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+
+security:
+  - ApiKeyAuth: []

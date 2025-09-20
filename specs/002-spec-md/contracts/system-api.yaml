@@ -1,0 +1,169 @@
+openapi: 3.0.3
+info:
+  title: A股量化因子系统 - 系统管理API
+  description: 系统平台信息、健康检查、性能监控API接口
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:8000/api/v1
+    description: 系统管理服务
+
+paths:
+  /system/platform:
+    get:
+      summary: 获取平台信息
+      description: 获取当前系统的平台类型和优化配置信息
+      responses:
+        '200':
+          description: 成功获取平台信息
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "success"
+                  data:
+                    $ref: '#/components/schemas/PlatformInfo'
+
+  /system/optimization/config:
+    get:
+      summary: 获取优化配置
+      description: 获取当前系统的性能优化配置
+      responses:
+        '200':
+          description: 成功获取优化配置
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  data:
+                    $ref: '#/components/schemas/OptimizationConfig'
+
+    post:
+      summary: 更新优化配置
+      description: 动态更新系统性能优化配置
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                platform_override:
+                  type: string
+                  enum: [apple_silicon, x86_64, arm64_linux, generic]
+                process_count:
+                  type: integer
+                  minimum: 1
+                  maximum: 32
+                low_precision_mode:
+                  type: boolean
+      responses:
+        '200':
+          description: 配置更新成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  data:
+                    $ref: '#/components/schemas/OptimizationConfig'
+
+  /system/health:
+    get:
+      summary: 系统健康检查
+      description: 检查各Agent服务状态和Hikyuu连接状态
+      responses:
+        '200':
+          description: 系统健康状态
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  data:
+                    type: object
+                    properties:
+                      agents_status:
+                        type: object
+                        properties:
+                          data_agent:
+                            type: string
+                            enum: [healthy, degraded, down]
+                          factor_agent:
+                            type: string
+                            enum: [healthy, degraded, down]
+                          validation_agent:
+                            type: string
+                            enum: [healthy, degraded, down]
+                          signal_agent:
+                            type: string
+                            enum: [healthy, degraded, down]
+                      hikyuu_status:
+                        type: object
+                        properties:
+                          connection:
+                            type: string
+                            enum: [connected, disconnected]
+                          data_loaded:
+                            type: boolean
+                          stock_count:
+                            type: integer
+
+components:
+  schemas:
+    PlatformInfo:
+      type: object
+      properties:
+        platform_type:
+          type: string
+          enum: [apple_silicon, x86_64, arm64_linux, generic]
+        cpu_architecture:
+          type: string
+          example: "arm64"
+        cpu_count:
+          type: integer
+          example: 8
+        system_info:
+          type: object
+          properties:
+            os:
+              type: string
+              example: "Darwin"
+            version:
+              type: string
+              example: "23.0.0"
+        simd_support:
+          type: array
+          items:
+            type: string
+          example: ["ARM_NEON"]
+
+    OptimizationConfig:
+      type: object
+      properties:
+        platform_type:
+          type: string
+          enum: [apple_silicon, x86_64, arm64_linux, generic]
+        optimal_processes:
+          type: integer
+          example: 8
+        low_precision_mode:
+          type: boolean
+          example: true
+        simd_support:
+          type: array
+          items:
+            type: string
+        last_updated:
+          type: string
+          format: date-time

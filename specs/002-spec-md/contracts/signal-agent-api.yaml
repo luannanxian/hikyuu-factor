@@ -1,0 +1,336 @@
+openapi: 3.0.3
+info:
+  title: A股量化因子系统 - 信号生成Agent API
+  description: 基于Hikyuu交易系统的信号生成、风控检查、人工确认Agent接口
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:8004/api/v1
+    description: 信号生成Agent服务
+
+paths:
+  /signals/generate:
+    post:
+      summary: 生成交易信号
+      description: 基于Hikyuu交易系统生成交易信号，强制要求人工确认
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                strategy_config:
+                  type: object
+                  properties:
+                    strategy_id:
+                      type: string
+                      example: "momentum_strategy_v1"
+                    stock_universe:
+                      type: array
+                      items:
+                        type: string
+                      example: ["sh000001", "sz000002"]
+                    signal_params:
+                      type: object
+                      properties:
+                        type:
+                          type: string
+                          enum: [dual_ma, factor_based, momentum]
+                        fast_period:
+                          type: integer
+                          example: 5
+                        slow_period:
+                          type: integer
+                          example: 20
+                    tm_params:
+                      type: object
+                      properties:
+                        init_cash:
+                          type: number
+                          example: 1000000
+                        name:
+                          type: string
+                confirm_token:
+                  type: string
+                  description: 确认令牌，必须提供以证明人工操作
+                user_id:
+                  type: string
+                  description: 操作用户ID
+              required: [strategy_config, confirm_token, user_id]
+      responses:
+        '202':
+          description: 信号生成任务已启动
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "accepted"
+                  task_id:
+                    type: string
+                  signal_count:
+                    type: integer
+                    description: 预计生成的信号数量
+                  estimated_completion:
+                    type: string
+                    format: date-time
+        '400':
+          description: 人工确认失败或参数错误
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "error"
+                  error_code:
+                    type: string
+                    enum: [CONFIRMATION_REQUIRED, INVALID_TOKEN, MISSING_PARAMS]
+                  message:
+                    type: string
+
+  /signals/{signal_id}/confirm:
+    post:
+      summary: 确认交易信号
+      description: 投资经理二次确认交易信号
+      parameters:
+        - name: signal_id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                action:
+                  type: string
+                  enum: [confirm, reject]
+                user_id:
+                  type: string
+                confirmation_code:
+                  type: string
+                  description: 二次确认码
+                notes:
+                  type: string
+                  description: 确认备注
+              required: [action, user_id, confirmation_code]
+      responses:
+        '200':
+          description: 确认操作成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  signal_id:
+                    type: string
+                  action_taken:
+                    type: string
+                  confirmed_at:
+                    type: string
+                    format: date-time
+                  confirmed_by:
+                    type: string
+
+  /signals/pending:
+    get:
+      summary: 获取待确认信号
+      description: 获取所有待确认的交易信号列表
+      parameters:
+        - name: user_id
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+      responses:
+        '200':
+          description: 成功获取待确认信号
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/TradingSignal'
+
+  /signals/{signal_id}:
+    get:
+      summary: 获取信号详情
+      description: 获取特定信号的详细信息，包括因子暴露归因
+      parameters:
+        - name: signal_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 成功获取信号详情
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  data:
+                    $ref: '#/components/schemas/TradingSignalDetail'
+
+  /risk/precheck:
+    post:
+      summary: 执行风控预检查
+      description: 在信号生成前执行风控检查
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                check_date:
+                  type: string
+                  format: date
+                strategy_config:
+                  type: object
+                check_types:
+                  type: array
+                  items:
+                    type: string
+                    enum: [data_completeness, factor_anomaly, position_limits, correlation_check]
+              required: [check_date, strategy_config]
+      responses:
+        '200':
+          description: 风控检查完成
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  risk_level:
+                    type: string
+                    enum: [low, medium, high, critical]
+                  checks:
+                    type: object
+                    properties:
+                      data_completeness:
+                        $ref: '#/components/schemas/RiskCheckResult'
+                      factor_anomaly:
+                        $ref: '#/components/schemas/RiskCheckResult'
+                      position_limits:
+                        $ref: '#/components/schemas/RiskCheckResult'
+                      correlation_check:
+                        $ref: '#/components/schemas/RiskCheckResult'
+                  recommendations:
+                    type: array
+                    items:
+                      type: string
+
+components:
+  schemas:
+    TradingSignal:
+      type: object
+      properties:
+        id:
+          type: string
+        stock_code:
+          type: string
+        signal_date:
+          type: string
+          format: date
+        signal_type:
+          type: string
+          enum: [buy, sell, hold]
+        weight:
+          type: number
+          minimum: 0
+          maximum: 1
+        confirmation_status:
+          type: string
+          enum: [pending, confirmed, rejected, expired]
+        expires_at:
+          type: string
+          format: date-time
+        generated_at:
+          type: string
+          format: date-time
+
+    TradingSignalDetail:
+      allOf:
+        - $ref: '#/components/schemas/TradingSignal'
+        - type: object
+          properties:
+            factor_exposure:
+              type: object
+              additionalProperties:
+                type: number
+              example:
+                momentum_20d: 0.85
+                value_pe: -0.42
+                quality_roe: 0.67
+            hikyuu_signal_info:
+              type: object
+              properties:
+                trade_info:
+                  type: string
+                signal_generator:
+                  type: string
+                strategy_params:
+                  type: object
+            risk_check_results:
+              type: object
+              properties:
+                overall_score:
+                  type: number
+                individual_checks:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/RiskCheckResult'
+
+    RiskCheckResult:
+      type: object
+      properties:
+        check_name:
+          type: string
+        passed:
+          type: boolean
+        score:
+          type: number
+          minimum: 0
+          maximum: 1
+        issues:
+          type: array
+          items:
+            type: string
+        severity:
+          type: string
+          enum: [low, medium, high, critical]
+
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+
+security:
+  - ApiKeyAuth: []

@@ -1,0 +1,383 @@
+openapi: 3.0.3
+info:
+  title: A股量化因子系统 - 数据管理Agent API
+  description: 负责数据获取、质量检查、更新的Agent接口
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:8001/api/v1
+    description: 数据管理Agent服务
+
+paths:
+  /data/stocks:
+    get:
+      summary: 获取股票池
+      description: 获取当前有效的股票池，自动排除ST/*ST股票和上市不足60日的股票
+      parameters:
+        - name: date
+          in: query
+          description: 查询日期，默认为当前日期
+          schema:
+            type: string
+            format: date
+            example: "2025-01-15"
+        - name: market
+          in: query
+          description: 市场过滤 (sh, sz, all)
+          schema:
+            type: string
+            enum: [sh, sz, all]
+            default: all
+      responses:
+        '200':
+          description: 成功获取股票池
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "success"
+                  data:
+                    type: object
+                    properties:
+                      stocks:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Stock'
+                      total_count:
+                        type: integer
+                        example: 4500
+                      update_time:
+                        type: string
+                        format: date-time
+
+  /data/kdata:
+    get:
+      summary: 获取K线数据
+      description: 获取指定股票的K线数据，支持Point-in-Time查询
+      parameters:
+        - name: stock_code
+          in: query
+          required: true
+          description: 股票代码
+          schema:
+            type: string
+            example: "sh000001"
+        - name: start_date
+          in: query
+          required: true
+          description: 开始日期
+          schema:
+            type: string
+            format: date
+        - name: end_date
+          in: query
+          required: true
+          description: 结束日期
+          schema:
+            type: string
+            format: date
+        - name: frequency
+          in: query
+          description: 数据频率
+          schema:
+            type: string
+            enum: [day, week, month]
+            default: day
+      responses:
+        '200':
+          description: 成功获取K线数据
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/MarketData'
+
+  /data/financial:
+    get:
+      summary: 获取财务数据
+      description: 获取财务数据，严格遵循Point-in-Time原则
+      parameters:
+        - name: stock_code
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: indicators
+          in: query
+          description: 财务指标列表，逗号分隔
+          schema:
+            type: string
+            example: "pe_ttm,pb,roe,revenue_growth"
+        - name: as_of_date
+          in: query
+          required: true
+          description: 查询时点，只返回此日期前已发布的数据
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: 成功获取财务数据
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/FinancialData'
+
+  /data/quality/check:
+    post:
+      summary: 执行数据质量检查
+      description: 对指定日期的数据执行质量检查，检测异常值
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                check_date:
+                  type: string
+                  format: date
+                check_types:
+                  type: array
+                  items:
+                    type: string
+                    enum: [price_consistency, volume_validity, change_threshold]
+                threshold_config:
+                  type: object
+                  properties:
+                    max_price_change_pct:
+                      type: number
+                      default: 0.3
+      responses:
+        '200':
+          description: 数据质量检查完成
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  data:
+                    type: object
+                    properties:
+                      passed:
+                        type: boolean
+                      anomalies:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/DataAnomaly'
+                      summary:
+                        type: object
+                        properties:
+                          total_checked:
+                            type: integer
+                          anomaly_count:
+                            type: integer
+                          anomaly_rate:
+                            type: number
+
+  /data/update:
+    post:
+      summary: 执行数据更新
+      description: 触发每日数据更新任务
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                date:
+                  type: string
+                  format: date
+                  description: 更新日期，默认为当前日期
+                data_types:
+                  type: array
+                  items:
+                    type: string
+                    enum: [market_data, financial_data, stock_list]
+                force_update:
+                  type: boolean
+                  default: false
+      responses:
+        '202':
+          description: 数据更新任务已启动
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "accepted"
+                  task_id:
+                    type: string
+                    description: 任务ID，可用于查询进度
+                  estimated_duration:
+                    type: integer
+                    description: 预估完成时间（分钟）
+
+  /data/update/{task_id}/status:
+    get:
+      summary: 查询数据更新任务状态
+      parameters:
+        - name: task_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 任务状态信息
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  task_id:
+                    type: string
+                  status:
+                    type: string
+                    enum: [pending, running, completed, failed]
+                  progress:
+                    type: number
+                    minimum: 0
+                    maximum: 1
+                  start_time:
+                    type: string
+                    format: date-time
+                  end_time:
+                    type: string
+                    format: date-time
+                  error_message:
+                    type: string
+
+components:
+  schemas:
+    Stock:
+      type: object
+      properties:
+        code:
+          type: string
+          example: "sh000001"
+        name:
+          type: string
+          example: "上证指数"
+        market:
+          type: string
+          enum: [sh, sz]
+        list_date:
+          type: string
+          format: date
+        status:
+          type: string
+          enum: [normal, st, star_st, suspended, delisted]
+        sector:
+          type: string
+          example: "金融服务"
+
+    MarketData:
+      type: object
+      properties:
+        stock_code:
+          type: string
+        date:
+          type: string
+          format: date
+        open:
+          type: number
+          format: decimal
+        high:
+          type: number
+          format: decimal
+        low:
+          type: number
+          format: decimal
+        close:
+          type: number
+          format: decimal
+        volume:
+          type: integer
+        amount:
+          type: number
+          format: decimal
+        adj_factor:
+          type: number
+          format: decimal
+        publication_time:
+          type: string
+          format: date-time
+
+    FinancialData:
+      type: object
+      properties:
+        stock_code:
+          type: string
+        indicator:
+          type: string
+        report_date:
+          type: string
+          format: date
+        publication_date:
+          type: string
+          format: date
+        value:
+          type: number
+          format: decimal
+        period_type:
+          type: string
+          enum: [quarterly, annual, ttm]
+        is_ttm:
+          type: boolean
+
+    DataAnomaly:
+      type: object
+      properties:
+        stock_code:
+          type: string
+        anomaly_type:
+          type: string
+          enum: [price_jump, volume_spike, missing_data, inconsistent_data]
+        severity:
+          type: string
+          enum: [low, medium, high, critical]
+        description:
+          type: string
+        detected_at:
+          type: string
+          format: date-time
+        raw_value:
+          type: number
+        expected_range:
+          type: object
+          properties:
+            min:
+              type: number
+            max:
+              type: number
+
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+
+security:
+  - ApiKeyAuth: []

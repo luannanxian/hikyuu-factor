@@ -1,0 +1,46 @@
+# A股全市场量化因子挖掘与决策支持系统 - 依赖包
+# Based on plan.md Technical Context requirements
+
+# Hikyuu quantitative framework (C++ core)
+hikyuu>=2.6.0
+
+# Web framework and API
+fastapi>=0.104.0
+uvicorn>=0.24.0
+pydantic>=2.5.0
+
+# Database and ORM
+sqlalchemy>=2.0.0
+mysqlclient>=2.2.0
+alembic>=1.13.0
+
+# Data processing
+pandas>=2.1.0
+numpy>=1.25.0
+
+# Caching and async
+redis>=5.0.0
+aioredis>=2.0.0
+
+# Testing framework (TDD requirement)
+pytest>=7.4.0
+pytest-asyncio>=0.21.0
+pytest-mock>=3.12.0
+pytest-cov>=4.1.0
+
+# Development tools
+black>=23.0.0
+flake8>=6.1.0
+mypy>=1.7.0
+isort>=5.12.0
+
+# Configuration and logging
+python-dotenv>=1.0.0
+structlog>=23.2.0
+
+# Security
+cryptography>=41.0.0
+bcrypt>=4.1.0
+
+# Monitoring and observability
+prometheus-client>=0.19.0

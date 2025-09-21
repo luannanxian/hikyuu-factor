@@ -1,0 +1,5 @@
+[console_scripts]
+data-update = src.cli.data_update:main
+factor-calculate = src.cli.factor_calculate:main
+hikyuu-factor = src.cli.main:main
+signal-generate = src.cli.signal_generate:main

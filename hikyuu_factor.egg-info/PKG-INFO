@@ -1,0 +1,60 @@
+Metadata-Version: 2.4
+Name: hikyuu-factor
+Version: 0.1.0
+Summary: A股全市场量化因子挖掘与决策支持系统 - 基于Hikyuu框架的Agent架构设计
+Author-email: hikyuu-factor development team <hikyuu-factor@example.com>
+License: MIT
+Project-URL: Homepage, https://github.com/luannanxian/hikyuu-factor
+Project-URL: Documentation, https://github.com/luannanxian/hikyuu-factor/docs
+Project-URL: Repository, https://github.com/luannanxian/hikyuu-factor.git
+Project-URL: Bug Tracker, https://github.com/luannanxian/hikyuu-factor/issues
+Keywords: quantitative finance,factor mining,hikyuu,A-share,trading
+Classifier: Development Status :: 3 - Alpha
+Classifier: Intended Audience :: Financial and Insurance Industry
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.11
+Classifier: Programming Language :: Python :: 3.12
+Classifier: Topic :: Office/Business :: Financial :: Investment
+Classifier: Topic :: Scientific/Engineering :: Information Analysis
+Requires-Python: >=3.11
+Description-Content-Type: text/markdown
+Requires-Dist: hikyuu>=2.6.0
+Requires-Dist: fastapi>=0.104.0
+Requires-Dist: uvicorn>=0.24.0
+Requires-Dist: pydantic>=2.5.0
+Requires-Dist: sqlalchemy>=2.0.0
+Requires-Dist: mysqlclient>=2.2.0
+Requires-Dist: alembic>=1.13.0
+Requires-Dist: pandas>=2.1.0
+Requires-Dist: numpy>=1.25.0
+Requires-Dist: redis>=5.0.0
+Requires-Dist: aioredis>=2.0.0
+Requires-Dist: python-dotenv>=1.0.0
+Requires-Dist: structlog>=23.2.0
+Requires-Dist: cryptography>=41.0.0
+Requires-Dist: bcrypt>=4.1.0
+Requires-Dist: prometheus-client>=0.19.0
+Provides-Extra: dev
+Requires-Dist: pytest>=7.4.0; extra == "dev"
+Requires-Dist: pytest-asyncio>=0.21.0; extra == "dev"
+Requires-Dist: pytest-mock>=3.12.0; extra == "dev"
+Requires-Dist: pytest-cov>=4.1.0; extra == "dev"
+Requires-Dist: black>=23.0.0; extra == "dev"
+Requires-Dist: flake8>=6.1.0; extra == "dev"
+Requires-Dist: mypy>=1.7.0; extra == "dev"
+Requires-Dist: isort>=5.12.0; extra == "dev"
+Requires-Dist: mkdocs>=1.5.0; extra == "dev"
+Requires-Dist: mkdocs-material>=9.4.0; extra == "dev"
+Requires-Dist: pre-commit>=3.5.0; extra == "dev"
+Requires-Dist: bandit>=1.7.5; extra == "dev"
+Provides-Extra: test
+Requires-Dist: pytest>=7.4.0; extra == "test"
+Requires-Dist: pytest-asyncio>=0.21.0; extra == "test"
+Requires-Dist: pytest-mock>=3.12.0; extra == "test"
+Requires-Dist: pytest-cov>=4.1.0; extra == "test"
+Requires-Dist: httpx>=0.25.0; extra == "test"
+Provides-Extra: docs
+Requires-Dist: mkdocs>=1.5.0; extra == "docs"
+Requires-Dist: mkdocs-material>=9.4.0; extra == "docs"
+Requires-Dist: mkdocstrings[python]>=0.23.0; extra == "docs"

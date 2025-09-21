@@ -1,0 +1,252 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "hikyuu-factor"
+version = "0.1.0"
+description = "A股全市场量化因子挖掘与决策支持系统 - 基于Hikyuu框架的Agent架构设计"
+authors = [
+    { name = "hikyuu-factor development team", email = "hikyuu-factor@example.com" }
+]
+license = { text = "MIT" }
+readme = "README.md"
+requires-python = ">=3.11"
+keywords = ["quantitative finance", "factor mining", "hikyuu", "A-share", "trading"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Financial and Insurance Industry",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Office/Business :: Financial :: Investment",
+    "Topic :: Scientific/Engineering :: Information Analysis",
+]
+
+dependencies = [
+    # Hikyuu quantitative framework (C++ core)
+    "hikyuu>=2.6.0",
+
+    # Web framework and API
+    "fastapi>=0.104.0",
+    "uvicorn>=0.24.0",
+    "pydantic>=2.5.0",
+
+    # Database and ORM
+    "sqlalchemy>=2.0.0",
+    "mysqlclient>=2.2.0",
+    "alembic>=1.13.0",
+
+    # Data processing
+    "pandas>=2.1.0",
+    "numpy>=1.25.0",
+
+    # Caching and async
+    "redis>=5.0.0",
+    "aioredis>=2.0.0",
+
+    # Configuration and logging
+    "python-dotenv>=1.0.0",
+    "structlog>=23.2.0",
+
+    # Security
+    "cryptography>=41.0.0",
+    "bcrypt>=4.1.0",
+
+    # Monitoring and observability
+    "prometheus-client>=0.19.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    # Testing framework (TDD requirement)
+    "pytest>=7.4.0",
+    "pytest-asyncio>=0.21.0",
+    "pytest-mock>=3.12.0",
+    "pytest-cov>=4.1.0",
+
+    # Code formatting and linting
+    "black>=23.0.0",
+    "flake8>=6.1.0",
+    "mypy>=1.7.0",
+    "isort>=5.12.0",
+
+    # Documentation
+    "mkdocs>=1.5.0",
+    "mkdocs-material>=9.4.0",
+
+    # Development utilities
+    "pre-commit>=3.5.0",
+    "bandit>=1.7.5",
+]
+
+test = [
+    "pytest>=7.4.0",
+    "pytest-asyncio>=0.21.0",
+    "pytest-mock>=3.12.0",
+    "pytest-cov>=4.1.0",
+    "httpx>=0.25.0",  # For testing FastAPI endpoints
+]
+
+docs = [
+    "mkdocs>=1.5.0",
+    "mkdocs-material>=9.4.0",
+    "mkdocstrings[python]>=0.23.0",
+]
+
+[project.scripts]
+hikyuu-factor = "src.cli.main:main"
+factor-calculate = "src.cli.factor_calculate:main"
+signal-generate = "src.cli.signal_generate:main"
+data-update = "src.cli.data_update:main"
+
+[project.urls]
+Homepage = "https://github.com/luannanxian/hikyuu-factor"
+Documentation = "https://github.com/luannanxian/hikyuu-factor/docs"
+Repository = "https://github.com/luannanxian/hikyuu-factor.git"
+"Bug Tracker" = "https://github.com/luannanxian/hikyuu-factor/issues"
+
+# setuptools configuration
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["src*"]
+exclude = ["tests*"]
+
+[tool.setuptools.package-data]
+"*" = ["*.yaml", "*.yml", "*.json", "*.toml"]
+
+# Black configuration (code formatting)
+[tool.black]
+line-length = 100
+target-version = ['py311', 'py312']
+include = '\.pyi?$'
+extend-exclude = '''
+/(
+  # directories
+  \.eggs
+  | \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | build
+  | dist
+)/
+'''
+
+# isort configuration (import sorting)
+[tool.isort]
+profile = "black"
+multi_line_output = 3
+line_length = 100
+known_first_party = ["src"]
+known_third_party = ["hikyuu", "fastapi", "sqlalchemy", "pandas", "numpy"]
+sections = ["FUTURE", "STDLIB", "THIRDPARTY", "FIRSTPARTY", "LOCALFOLDER"]
+
+# mypy configuration (type checking)
+[tool.mypy]
+python_version = "3.11"
+strict = true
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+disallow_untyped_decorators = true
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_no_return = true
+warn_unreachable = true
+strict_equality = true
+
+# Type checking for dependencies
+[[tool.mypy.overrides]]
+module = [
+    "hikyuu.*",
+    "mysqlclient.*",
+    "prometheus_client.*",
+]
+ignore_missing_imports = true
+
+# pytest configuration
+[tool.pytest.ini_options]
+minversion = "7.0"
+addopts = [
+    "--strict-markers",
+    "--strict-config",
+    "--verbose",
+    "--tb=short",
+    "--cov=src",
+    "--cov-report=term-missing",
+    "--cov-report=html:coverage_html",
+    "--cov-report=xml:coverage.xml",
+]
+testpaths = ["tests"]
+python_files = ["test_*.py", "*_test.py"]
+python_functions = ["test_*"]
+python_classes = ["Test*"]
+markers = [
+    "unit: Unit tests",
+    "integration: Integration tests",
+    "contract: Contract tests",
+    "performance: Performance tests",
+    "slow: Slow tests",
+    "requires_hikyuu: Tests requiring Hikyuu framework",
+    "requires_mysql: Tests requiring MySQL database",
+    "requires_redis: Tests requiring Redis cache",
+]
+
+# Coverage configuration
+[tool.coverage.run]
+source = ["src"]
+omit = [
+    "*/tests/*",
+    "*/test_*",
+    "*/__init__.py",
+    "*/conftest.py",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "if self.debug:",
+    "if settings.DEBUG",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if 0:",
+    "if __name__ == .__main__.:",
+    "class .*\\bProtocol\\):",
+    "@(abc\\.)?abstractmethod",
+]
+
+# Flake8 configuration (linting)
+[tool.flake8]
+max-line-length = 100
+extend-ignore = [
+    "E203",  # whitespace before ':'
+    "W503",  # line break before binary operator
+    "E501",  # line too long (handled by black)
+]
+exclude = [
+    ".git",
+    "__pycache__",
+    "build",
+    "dist",
+    ".eggs",
+    "*.egg-info",
+    ".venv",
+    ".tox",
+]
+per-file-ignores = [
+    "__init__.py:F401",  # imported but unused
+    "tests/*:S101",      # use of assert
+]
+
+# Bandit configuration (security linting)
+[tool.bandit]
+exclude_dirs = ["tests", "build", "dist"]
+tests = ["B201", "B301", "B401", "B501", "B601"]
+skips = ["B101", "B601"]

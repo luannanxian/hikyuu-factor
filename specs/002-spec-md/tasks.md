@@ -42,7 +42,7 @@
   创建: src/{agents,models,services,api,cli,lib}/, tests/{unit,integration,contract,performance}/, config/, docs/, scripts/
   ```
 - [x] T002 Initialize Python package with __init__.py files in all modules
-- [x] T003 Create requirements.txt with pinned versions (Hikyuu>=2.6.0, FastAPI>=0.104.0, SQLAlchemy>=2.0.0)
+- [x] T003 Create requirements.txt with pinned versions (Hikyuu>=2.6.8, FastAPI>=0.104.0, SQLAlchemy>=2.0.0)
 - [x] T004 Setup pyproject.toml with build system and development tools
 - [x] T005 Create basic .gitignore, .env.example, and README.md
 

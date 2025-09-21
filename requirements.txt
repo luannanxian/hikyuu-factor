@@ -11,7 +11,7 @@ pydantic>=2.5.0
 
 # Database and ORM
 sqlalchemy>=2.0.0
-mysqlclient>=2.2.0
+PyMySQL>=1.1.0
 alembic>=1.13.0
 
 # Data processing

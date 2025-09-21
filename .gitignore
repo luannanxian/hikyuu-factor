@@ -255,8 +255,9 @@ factors/
 signals/
 backtest_results/
 
-# 模型文件
-models/
+# 训练后的模型文件 (排除源代码models目录)
+trained_models/
+model_artifacts/
 *.pkl
 *.pickle
 *.joblib

@@ -37,14 +37,14 @@
 ## Phase 1: Bootstrap (项目启动)
 **目标**: 建立可工作的基础项目结构
 
-- [ ] T001 Create project directory structure with proper permissions
+- [x] T001 Create project directory structure with proper permissions
   ```
   创建: src/{agents,models,services,api,cli,lib}/, tests/{unit,integration,contract,performance}/, config/, docs/, scripts/
   ```
-- [ ] T002 Initialize Python package with __init__.py files in all modules
-- [ ] T003 Create requirements.txt with pinned versions (Hikyuu>=2.6.0, FastAPI>=0.104.0, SQLAlchemy>=2.0.0)
-- [ ] T004 Setup pyproject.toml with build system and development tools
-- [ ] T005 Create basic .gitignore, .env.example, and README.md
+- [x] T002 Initialize Python package with __init__.py files in all modules
+- [x] T003 Create requirements.txt with pinned versions (Hikyuu>=2.6.0, FastAPI>=0.104.0, SQLAlchemy>=2.0.0)
+- [x] T004 Setup pyproject.toml with build system and development tools
+- [x] T005 Create basic .gitignore, .env.example, and README.md
 
 **依赖**: 无
 **验证**: ✅ `python -c "import src; print('Project structure OK')"`

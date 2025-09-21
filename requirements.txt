@@ -17,6 +17,7 @@ alembic>=1.13.0
 # Data processing
 pandas>=2.1.0
 numpy>=1.25.0
+scipy>=1.11.0
 
 # Caching and async
 redis>=5.0.0

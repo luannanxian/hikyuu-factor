@@ -10,7 +10,7 @@ from enum import Enum
 
 from sqlalchemy import (
     Column, String, DateTime, Date, BigInteger, Integer,
-    Decimal as SQLDecimal, Text, JSON, ForeignKey,
+    Numeric, Text, JSON, ForeignKey,
     UniqueConstraint, Index, Enum as SQLEnum
 )
 from sqlalchemy.ext.declarative import declarative_base
@@ -95,15 +95,15 @@ class MarketData(Base):
                        nullable=False, comment='股票代码')
     trade_date = Column(Date, nullable=False, comment='交易日期')
 
-    open_price = Column(SQLDecimal(10, 3), nullable=False, comment='开盘价')
-    high_price = Column(SQLDecimal(10, 3), nullable=False, comment='最高价')
-    low_price = Column(SQLDecimal(10, 3), nullable=False, comment='最低价')
-    close_price = Column(SQLDecimal(10, 3), nullable=False, comment='收盘价')
+    open_price = Column(Numeric(10, 3), nullable=False, comment='开盘价')
+    high_price = Column(Numeric(10, 3), nullable=False, comment='最高价')
+    low_price = Column(Numeric(10, 3), nullable=False, comment='最低价')
+    close_price = Column(Numeric(10, 3), nullable=False, comment='收盘价')
     volume = Column(BigInteger, nullable=False, comment='成交量')
-    amount = Column(SQLDecimal(18, 2), nullable=False, comment='成交金额')
+    amount = Column(Numeric(18, 2), nullable=False, comment='成交金额')
 
-    adj_factor = Column(SQLDecimal(10, 6), default=1.0, comment='复权因子')
-    turnover_rate = Column(SQLDecimal(8, 4), comment='换手率')
+    adj_factor = Column(Numeric(10, 6), default=1.0, comment='复权因子')
+    turnover_rate = Column(Numeric(8, 4), comment='换手率')
 
     created_at = Column(DateTime, default=func.current_timestamp())
     updated_at = Column(DateTime, default=func.current_timestamp(), onupdate=func.current_timestamp())
@@ -133,16 +133,16 @@ class FinancialData(Base):
     report_date = Column(Date, nullable=False, comment='报告期')
 
     # 基本财务指标
-    pe_ratio = Column(SQLDecimal(10, 3), comment='市盈率')
-    pb_ratio = Column(SQLDecimal(10, 3), comment='市净率')
-    roe = Column(SQLDecimal(8, 4), comment='净资产收益率')
-    roa = Column(SQLDecimal(8, 4), comment='总资产收益率')
+    pe_ratio = Column(Numeric(10, 3), comment='市盈率')
+    pb_ratio = Column(Numeric(10, 3), comment='市净率')
+    roe = Column(Numeric(8, 4), comment='净资产收益率')
+    roa = Column(Numeric(8, 4), comment='总资产收益率')
 
     # 财务数据
-    total_revenue = Column(SQLDecimal(18, 2), comment='营业收入')
-    net_profit = Column(SQLDecimal(18, 2), comment='净利润')
-    total_assets = Column(SQLDecimal(18, 2), comment='总资产')
-    total_equity = Column(SQLDecimal(18, 2), comment='股东权益')
+    total_revenue = Column(Numeric(18, 2), comment='营业收入')
+    net_profit = Column(Numeric(18, 2), comment='净利润')
+    total_assets = Column(Numeric(18, 2), comment='总资产')
+    total_equity = Column(Numeric(18, 2), comment='股东权益')
 
     created_at = Column(DateTime, default=func.current_timestamp())
     updated_at = Column(DateTime, default=func.current_timestamp(), onupdate=func.current_timestamp())
@@ -179,7 +179,7 @@ class FactorDefinition(Base):
     calculation_params = Column(JSON, comment='计算参数 JSON格式')
 
     # 统计信息
-    coverage_ratio = Column(SQLDecimal(5, 4), default=0, comment='覆盖率')
+    coverage_ratio = Column(Numeric(5, 4), default=0, comment='覆盖率')
     avg_calculation_time_ms = Column(Integer, default=0, comment='平均计算时间(毫秒)')
 
     created_by = Column(String(50), comment='创建者')
@@ -212,9 +212,9 @@ class FactorValue(Base):
                        nullable=False, comment='股票代码')
     trade_date = Column(Date, nullable=False, comment='交易日期')
 
-    factor_value = Column(SQLDecimal(15, 6), nullable=False, comment='因子原始值')
-    factor_score = Column(SQLDecimal(8, 6), comment='因子标准化分数 (0-1)')
-    percentile_rank = Column(SQLDecimal(5, 4), comment='百分位排名')
+    factor_value = Column(Numeric(15, 6), nullable=False, comment='因子原始值')
+    factor_score = Column(Numeric(8, 6), comment='因子标准化分数 (0-1)')
+    percentile_rank = Column(Numeric(5, 4), comment='百分位排名')
 
     # 计算元信息
     calculation_id = Column(String(50), comment='计算批次ID')
@@ -250,7 +250,7 @@ class FactorCalculationTask(Base):
     date_range = Column(JSON, nullable=False, comment='日期范围 {start_date, end_date}')
 
     status = Column(SQLEnum(TaskStatus), default=TaskStatus.PENDING, comment='状态')
-    progress = Column(SQLDecimal(5, 2), default=0, comment='进度百分比')
+    progress = Column(Numeric(5, 2), default=0, comment='进度百分比')
 
     # 执行信息
     started_at = Column(DateTime, comment='开始时间')

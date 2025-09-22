@@ -12,9 +12,9 @@ from typing import List
 # 添加项目根目录到路径
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
-from src.services.factor_calculation_service import FactorCalculationService
-from src.data.hikyuu_interface import hikyuu_interface
-from src.lib.environment import env_manager
+from services.factor_calculation_service import FactorCalculationService
+from data.hikyuu_interface import hikyuu_interface
+from lib.environment import env_manager
 
 async def test_hikyuu_mf_features():
     """测试Hikyuu MF和FINANCE功能"""

@@ -6,9 +6,10 @@ Hikyuu量化框架接口层
 import os
 import logging
 from typing import List, Dict, Any, Optional, Tuple
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 from decimal import Decimal
 import pandas as pd
+import numpy as np
 
 try:
     import hikyuu as hku

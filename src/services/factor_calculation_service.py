@@ -744,9 +744,6 @@ class FactorCalculator:
             })
 
         return pd.DataFrame(data)
-                })
-
-            return pd.DataFrame(data)
 
         try:
             # 实际Hikyuu数据获取

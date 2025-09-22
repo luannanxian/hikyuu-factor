@@ -3,4 +3,130 @@ Factor Calculation Performance Test
 因子计算性能测试脚本
 """
 
-import asyncio\nimport time\nfrom datetime import date, timedelta\nfrom typing import List\n\nfrom services.factor_calculation_service import (\n    FactorRegistry, FactorCalculator, PlatformOptimizer,\n    FactorCalculationService\n)\nfrom models.hikyuu_models import FactorCalculationRequest, FactorType\nfrom lib.performance import calculation_optimizer, platform_optimizer\nfrom data.repository import stock_repository\n\n\nasync def test_performance_targets():\n    \"\"\"\u6d4b\u8bd5\u6027\u80fd\u76ee\u6807\u662f\u5426\u8fbe\u6210\"\"\"\n    print(\"=\" * 80)\n    print(\"\u56e0\u5b50\u8ba1\u7b97\u6027\u80fd\u6d4b\u8bd5\")\n    print(\"=\" * 80)\n\n    # \u8f93\u51fa\u5e73\u53f0\u4fe1\u606f\n    platform_info = platform_optimizer.platform_info\n    print(f\"\u5e73\u53f0\u4fe1\u606f:\")\n    print(f\"  \u7cfb\u7edf: {platform_info['system']} {platform_info['machine']}\")\n    print(f\"  CPU\u6838\u6570: {platform_info['cpu_count']}\")\n    print(f\"  \u5185\u5b58: {platform_info['memory_gb']}GB\")\n    print(f\"  Apple Silicon: {platform_info['is_apple_silicon']}\")\n    print(f\"  x86_64: {platform_info['is_x86_64']}\")\n    print()\n\n    # \u6a21\u62df\u5168\u5e02\u573a\u80a1\u7968\u6570\u91cf\n    full_market_stocks = 5000  # A\u80a1\u5168\u5e02\u573a\u7ea65000\u53ea\u80a1\u7968\n    factors_count = 20  # 20\u4e2a\u56e0\u5b50\n\n    # \u6027\u80fd\u4f30\u7b97\n    estimate = calculation_optimizer.estimate_calculation_time(full_market_stocks, factors_count)\n    strategy = calculation_optimizer.optimize_calculation_strategy(full_market_stocks, factors_count)\n\n    print(f\"\u5168\u5e02\u573a\u6027\u80fd\u4f30\u7b97:\")\n    print(f\"  \u80a1\u7968\u6570\u91cf: {full_market_stocks:,}\")\n    print(f\"  \u56e0\u5b50\u6570\u91cf: {factors_count}\")\n    print(f\"  \u9884\u8ba1\u8ba1\u7b97\u65f6\u95f4: {estimate['estimated_minutes']:.1f}\u5206\u949f ({estimate['estimated_hours']:.2f}\u5c0f\u65f6)\")\n    print(f\"  \u76ee\u6807\u65f6\u95f4: {estimate['target_minutes']}\u5206\u949f\")\n    print(f\"  \u6ee1\u8db3\u6027\u80fd\u76ee\u6807: {'\\u2705 \u662f' if estimate['meets_target'] else '\\u274c \u5426'}\")\n    print(f\"  \u6027\u80fd\u6bd4\u7387: {estimate['performance_ratio']:.2f}x\")\n    print()\n\n    print(f\"\u4f18\u5316\u7b56\u7565:\")\n    print(f\"  \u5e76\u884c\u8ba1\u7b97: {strategy['use_parallel']}\")\n    print(f\"  \u5de5\u4f5c\u8fdb\u7a0b\u6570: {strategy['worker_count']}\")\n    print(f\"  \u6279\u6b21\u5927\u5c0f: {strategy['chunk_size']}\")\n    print(f\"  \u5185\u5b58\u4f18\u5316: {strategy['memory_optimization']}\")\n    print(f\"  \u7f13\u5b58\u4e2d\u95f4\u7ed3\u679c: {strategy['cache_intermediate_results']}\")\n    print()\n\n    # \u5c0f\u89c4\u6a21\u6027\u80fd\u6d4b\u8bd5\n    print(\"\u6b63\u5728\u8fdb\u884c\u5c0f\u89c4\u6a21\u6027\u80fd\u6d4b\u8bd5...\")\n    \n    try:\n        # \u521d\u59cb\u5316\u670d\u52a1\n        registry = FactorRegistry()\n        calculator = FactorCalculator(registry)\n        service = FactorCalculationService()\n\n        # \u6d4b\u8bd5\u80a1\u7968\u5217\u8868\uff08\u5c0f\u89c4\u6a21\uff09\n        test_stocks = [\"sh000001\", \"sz000001\", \"sh600036\", \"sz000002\", \"sh600519\"]\n        \n        # \u521b\u5efa\u6d4b\u8bd5\u8bf7\u6c42\n        request = FactorCalculationRequest(\n            request_id=\"perf_test_001\",\n            factor_name=\"momentum_20d\",\n            factor_type=FactorType.MOMENTUM,\n            stock_codes=test_stocks,\n            start_date=date.today() - timedelta(days=60),\n            end_date=date.today(),\n            data_source=\"hikyuu\",\n            chunk_size=50\n        )\n\n        # \u6267\u884c\u8ba1\u7b97\n        start_time = time.perf_counter()\n        result = await calculator.calculate_factor(request)\n        end_time = time.perf_counter()\n\n        actual_time = end_time - start_time\n        stocks_per_second = len(test_stocks) / actual_time\n        \n        print(f\"\u5c0f\u89c4\u6a21\u6d4b\u8bd5\u7ed3\u679c:\")\n        print(f\"  \u6d4b\u8bd5\u80a1\u7968: {len(test_stocks)}\u53ea\")\n        print(f\"  \u5b9e\u9645\u8017\u65f6: {actual_time:.2f}\u79d2\")\n        print(f\"  \u6210\u529f\u8ba1\u7b97: {result.successful_calculations}\")\n        print(f\"  \u5931\u8d25\u8ba1\u7b97: {result.failed_calculations}\")\n        print(f\"  \u5904\u7406\u901f\u7387: {stocks_per_second:.1f}\u80a1\u7968/\u79d2\")\n        print()\n\n        # \u6839\u636e\u5c0f\u89c4\u6a21\u6d4b\u8bd5\u7ed3\u679c\u63a8\u7b97\u5168\u5e02\u573a\u6027\u80fd\n        if stocks_per_second > 0:\n            estimated_full_market_time = (full_market_stocks * factors_count) / stocks_per_second / 60  # \u5206\u949f\n            print(f\"\u57fa\u4e8e\u5b9e\u9645\u6d4b\u8bd5\u7684\u5168\u5e02\u573a\u6027\u80fd\u63a8\u7b97:\")\n            print(f\"  \u9884\u8ba1\u5168\u5e02\u573a\u8ba1\u7b97\u65f6\u95f4: {estimated_full_market_time:.1f}\u5206\u949f ({estimated_full_market_time/60:.2f}\u5c0f\u65f6)\")\n            print(f\"  \u76ee\u6807\u8fbe\u6210\u60c5\u51b5: {'\\u2705 \u8fbe\u6210' if estimated_full_market_time <= 30 else '\\u274c \u672a\u8fbe\u6210'}\")\n            \n            if estimated_full_market_time > 30:\n                needed_improvement = estimated_full_market_time / 30\n                print(f\"  \u9700\u8981\u6027\u80fd\u63d0\u5347: {needed_improvement:.1f}x\")\n                print(f\"  \u5efa\u8bae\u63aa\u65bd:\")\n                print(f\"    - \u589e\u52a0\u5e76\u884c\u5ea6\u81f3 {min(platform_info['cpu_count'], int(strategy['worker_count'] * needed_improvement))}\u4e2a\u8fdb\u7a0b\")\n                print(f\"    - \u4f18\u5316\u6570\u636e\u7f13\u5b58\u548c\u9884\u8ba1\u7b97\")\n                print(f\"    - \u4f7f\u7528\u66f4\u9ad8\u6027\u80fd\u7684\u786c\u4ef6\u5e73\u53f0\")\n        print()\n\n    except Exception as e:\n        print(f\"\u6027\u80fd\u6d4b\u8bd5\u5931\u8d25: {e}\")\n        print(\"\u8bf7\u68c0\u67e5Hikyuu\u73af\u5883\u548c\u6570\u636e\u6e90\u914d\u7f6e\")\n\n    print(\"=\" * 80)\n    print(\"\u6027\u80fd\u6d4b\u8bd5\u5b8c\u6210\")\n    print(\"=\" * 80)\n\n\nif __name__ == \"__main__\":\n    asyncio.run(test_performance_targets())
+import asyncio
+import time
+import sys
+import os
+from datetime import date, timedelta
+from typing import List
+
+# 添加项目根目录到路径
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+
+from services.factor_calculation_service import (
+    FactorRegistry, FactorCalculator, PlatformOptimizer,
+    FactorCalculationService
+)
+from models.hikyuu_models import FactorCalculationRequest, FactorType
+from lib.performance import calculation_optimizer, platform_optimizer
+from data.repository import stock_repository
+
+
+async def test_performance_targets():
+    """测试性能目标是否达成"""
+    print("=" * 80)
+    print("因子计算性能测试")
+    print("=" * 80)
+
+    # 输出平台信息
+    platform_info = platform_optimizer.platform_info
+    print(f"平台信息:")
+    print(f"  系统: {platform_info['system']} {platform_info['machine']}")
+    print(f"  CPU核数: {platform_info['cpu_count']}")
+    print(f"  内存: {platform_info['memory_gb']}GB")
+    print(f"  Apple Silicon: {platform_info['is_apple_silicon']}")
+    print(f"  x86_64: {platform_info['is_x86_64']}")
+    print()
+
+    # 模拟全市场股票数量
+    full_market_stocks = 5000  # A股全市场约5000只股票
+    factors_count = 20  # 20个因子
+
+    # 性能估算
+    estimate = calculation_optimizer.estimate_calculation_time(full_market_stocks, factors_count)
+    strategy = calculation_optimizer.optimize_calculation_strategy(full_market_stocks, factors_count)
+
+    print(f"全市场性能估算:")
+    print(f"  股票数量: {full_market_stocks:,}")
+    print(f"  因子数量: {factors_count}")
+    print(f"  预计计算时间: {estimate['estimated_minutes']:.1f}分钟 ({estimate['estimated_hours']:.2f}小时)")
+    print(f"  目标时间: {estimate['target_minutes']}分钟")
+    print(f"  满足性能目标: {'是' if estimate['meets_target'] else '否'}")
+    print(f"  性能比率: {estimate['performance_ratio']:.2f}x")
+    print()
+
+    print(f"优化策略:")
+    print(f"  并行计算: {strategy['use_parallel']}")
+    print(f"  工作进程数: {strategy['worker_count']}")
+    print(f"  批次大小: {strategy['chunk_size']}")
+    print(f"  内存优化: {strategy['memory_optimization']}")
+    print(f"  缓存中间结果: {strategy['cache_intermediate_results']}")
+    print()
+
+    # 小规模性能测试
+    print("正在进行小规模性能测试...")
+
+    try:
+        # 初始化服务
+        registry = FactorRegistry()
+        calculator = FactorCalculator(registry)
+        service = FactorCalculationService()
+
+        # 测试股票列表（小规模）
+        test_stocks = ["sh000001", "sz000001", "sh600036", "sz000002", "sh600519"]
+
+        # 创建测试请求
+        request = FactorCalculationRequest(
+            request_id="perf_test_001",
+            factor_name="momentum_20d",
+            factor_type=FactorType.MOMENTUM,
+            stock_codes=test_stocks,
+            start_date=date.today() - timedelta(days=60),
+            end_date=date.today(),
+            data_source="hikyuu",
+            chunk_size=50
+        )
+
+        # 执行计算
+        start_time = time.perf_counter()
+        result = await calculator.calculate_factor(request)
+        end_time = time.perf_counter()
+
+        actual_time = end_time - start_time
+        stocks_per_second = len(test_stocks) / actual_time
+
+        print(f"小规模测试结果:")
+        print(f"  测试股票: {len(test_stocks)}只")
+        print(f"  实际耗时: {actual_time:.2f}秒")
+        print(f"  成功计算: {result.successful_calculations}")
+        print(f"  失败计算: {result.failed_calculations}")
+        print(f"  处理速率: {stocks_per_second:.1f}股票/秒")
+        print()
+
+        # 根据小规模测试结果推算全市场性能
+        if stocks_per_second > 0:
+            estimated_full_market_time = (full_market_stocks * factors_count) / stocks_per_second / 60  # 分钟
+            print(f"基于实际测试的全市场性能推算:")
+            print(f"  预计全市场计算时间: {estimated_full_market_time:.1f}分钟 ({estimated_full_market_time/60:.2f}小时)")
+            print(f"  目标达成情况: {'达成' if estimated_full_market_time <= 30 else '未达成'}")
+
+            if estimated_full_market_time > 30:
+                needed_improvement = estimated_full_market_time / 30
+                print(f"  需要性能提升: {needed_improvement:.1f}x")
+                print(f"  建议措施:")
+                print(f"    - 增加并行度至 {min(platform_info['cpu_count'], int(strategy['worker_count'] * needed_improvement))}个进程")
+                print(f"    - 优化数据缓存和预计算")
+                print(f"    - 使用更高性能的硬件平台")
+        print()
+
+    except Exception as e:
+        print(f"性能测试失败: {e}")
+        print("请检查Hikyuu环境和数据源配置")
+
+    print("=" * 80)
+    print("性能测试完成")
+    print("=" * 80)
+
+
+if __name__ == "__main__":
+    asyncio.run(test_performance_targets())

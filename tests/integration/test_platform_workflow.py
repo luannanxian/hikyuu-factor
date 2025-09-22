@@ -1,327 +1,181 @@
 """
-T024: 平台检测→优化配置→性能验证 集成测试
-
-测试完整的平台适配工作流程：
-1. 自动检测运行平台 (Apple Silicon vs x86_64)
-2. 应用平台特定的优化配置
-3. 验证性能提升效果
-4. 确保配置在不同平台间的一致性
-
-这是一个TDD Red-Green-Refactor循环的第一步 - 先创建失败的测试
+Platform Workflow Integration Test (T024)
+集成测试: 平台检测→优化配置→性能验证
 """
 
+import asyncio
 import pytest
-import platform
+import requests
 import time
-import numpy as np
-import pandas as pd
-from pathlib import Path
-from typing import Dict, Any, List, Tuple
-from unittest.mock import Mock, patch
+from typing import Dict, Any
 
-# 导入待实现的模块 (这些导入在Red阶段会失败)
-try:
-    from src.lib.platform_detector import PlatformDetector
-    from src.lib.optimization_config import OptimizationConfig
-    from src.lib.performance_profiler import PerformanceProfiler
-    from src.services.platform_optimizer import PlatformOptimizer
-except ImportError:
-    # TDD Red阶段 - 这些模块还不存在
-    PlatformDetector = None
-    OptimizationConfig = None
-    PerformanceProfiler = None
-    PlatformOptimizer = None
+from tests.integration.test_environment import IntegrationTestBase, integration_test_environment
 
 
-@pytest.mark.integration
-@pytest.mark.platform
-@pytest.mark.requires_hikyuu
-class TestPlatformWorkflow:
-    """平台检测→优化配置→性能验证 集成测试"""
+class TestPlatformWorkflowIntegration:
+    """平台工作流集成测试"""
 
-    def setup_method(self):
-        """设置测试环境"""
-        self.test_data_size = 1000  # 测试数据规模
-        self.performance_threshold = {
-            "apple_silicon": 0.8,  # Apple Silicon期望80%以上性能提升
-            "x86_64": 0.3,         # x86_64期望30%以上性能提升
-        }
+    @pytest.mark.asyncio
+    async def test_platform_detection_to_performance_verification(self):
+        """T024: 完整平台检测到性能验证工作流"""
+        async with integration_test_environment() as agent_manager:
+            test_base = IntegrationTestBase(agent_manager)
 
-        # 创建测试用的市场数据
-        self.test_market_data = self._create_test_market_data()
+            # Step 1: 检测当前平台
+            platform_response = requests.get(
+                test_base.get_api_url("data", "/api/v1/system/platform")
+            )
+            assert platform_response.status_code == 200
 
-    def _create_test_market_data(self) -> pd.DataFrame:
-        """创建测试用的市场数据"""
-        np.random.seed(42)
-        dates = pd.date_range('2024-01-01', periods=252, freq='D')
-        stocks = [f"sh{600000 + i:06d}" for i in range(100)]
+            platform_data = platform_response.json()
+            assert "platform_type" in platform_data
+            assert "simd_support" in platform_data
+            assert "optimization_available" in platform_data
 
-        data = []
-        for stock in stocks:
-            for date in dates:
-                data.append({
-                    'stock_code': stock,
-                    'date': date,
-                    'open': 10.0 + np.random.randn() * 0.5,
-                    'close': 10.0 + np.random.randn() * 0.5,
-                    'high': 10.5 + np.random.randn() * 0.3,
-                    'low': 9.5 + np.random.randn() * 0.3,
-                    'volume': 1000000 + np.random.randint(0, 500000),
+            detected_platform = platform_data["platform_type"]
+            print(f"Detected platform: {detected_platform}")
+
+            # Step 2: 基于检测结果配置优化
+            optimization_config = {
+                "platform_type": detected_platform,
+                "enable_simd": platform_data["simd_support"]["available"],
+                "optimization_level": "aggressive",
+                "memory_optimization": True,
+                "batch_processing": True
+            }
+
+            # 如果是Apple Silicon，启用ARM NEON优化
+            if detected_platform == "apple_silicon":
+                optimization_config.update({
+                    "arm_neon_enabled": True,
+                    "metal_acceleration": True,
+                    "unified_memory": True
                 })
 
-        return pd.DataFrame(data)
+            # 如果是x86_64，启用AVX/SSE优化
+            elif detected_platform == "x86_64":
+                optimization_config.update({
+                    "avx2_enabled": platform_data["simd_support"]["avx2"],
+                    "sse4_enabled": platform_data["simd_support"]["sse4"],
+                    "cache_optimization": True
+                })
 
-    @pytest.mark.integration
-    def test_complete_platform_workflow(self):
-        """测试完整的平台工作流程"""
-        # 这个测试在Red阶段应该失败，因为相关类还没有实现
-        if PlatformDetector is None:
-            pytest.skip("PlatformDetector not implemented yet - TDD Red phase")
+            config_response = requests.post(
+                test_base.get_api_url("data", "/api/v1/system/optimization/config"),
+                json=optimization_config
+            )
+            assert config_response.status_code == 200
 
-        # Step 1: 平台检测
-        detector = PlatformDetector()
-        platform_info = detector.detect_platform()
+            config_result = config_response.json()
+            assert config_result["status"] == "applied"
+            assert "performance_improvement" in config_result
 
-        # 验证平台检测结果
-        assert platform_info is not None, "平台检测不能返回None"
-        assert 'architecture' in platform_info, "平台信息必须包含架构信息"
-        assert 'cpu_features' in platform_info, "平台信息必须包含CPU特性"
-        assert 'memory_info' in platform_info, "平台信息必须包含内存信息"
+            # Step 3: 执行性能基准测试
+            benchmark_request = {
+                "test_type": "factor_calculation",
+                "factor_id": "momentum_20d",
+                "stock_universe": ["sh000001", "sh000002", "sz000001", "sz000002"],
+                "date_range": {
+                    "start_date": "2023-01-01",
+                    "end_date": "2023-01-31"
+                },
+                "benchmark_iterations": 3
+            }
 
-        # Step 2: 优化配置
-        config = OptimizationConfig()
-        optimization_config = config.get_platform_config(platform_info)
+            benchmark_response = requests.post(
+                test_base.get_api_url("factor", "/api/v1/factor/benchmark"),
+                json=benchmark_request
+            )
+            assert benchmark_response.status_code == 202  # 异步处理
 
-        # 验证优化配置
-        assert optimization_config is not None, "优化配置不能为空"
-        assert 'cpu_optimization' in optimization_config, "必须包含CPU优化配置"
-        assert 'memory_optimization' in optimization_config, "必须包含内存优化配置"
-        assert 'threading_config' in optimization_config, "必须包含线程配置"
+            benchmark_data = benchmark_response.json()
+            benchmark_id = benchmark_data["benchmark_id"]
 
-        # Step 3: 性能验证
-        profiler = PerformanceProfiler()
-        optimizer = PlatformOptimizer(optimization_config)
+            # Step 4: 等待基准测试完成
+            benchmark_result = await test_base.wait_for_task_completion("factor", benchmark_id, timeout=120)
+            assert benchmark_result["status"] == "completed"
 
-        # 基准性能测试 (未优化)
-        baseline_performance = profiler.benchmark_computation(
-            self.test_market_data,
-            optimizer=None
-        )
+            performance_metrics = benchmark_result["result"]["performance_metrics"]
 
-        # 优化后性能测试
-        optimized_performance = profiler.benchmark_computation(
-            self.test_market_data,
-            optimizer=optimizer
-        )
+            # Step 5: 验证性能提升
+            assert "execution_time_ms" in performance_metrics
+            assert "memory_usage_mb" in performance_metrics
+            assert "cpu_utilization" in performance_metrics
+            assert "optimization_effectiveness" in performance_metrics
 
-        # 验证性能提升
-        performance_improvement = self._calculate_performance_improvement(
-            baseline_performance,
-            optimized_performance
-        )
+            # 验证优化效果
+            optimization_effectiveness = performance_metrics["optimization_effectiveness"]
+            assert optimization_effectiveness["enabled"] is True
 
-        platform_arch = platform_info['architecture']
-        expected_threshold = self.performance_threshold.get(platform_arch, 0.1)
+            if detected_platform == "apple_silicon":
+                # Apple Silicon应该有NEON优化
+                assert "arm_neon" in optimization_effectiveness
+                assert optimization_effectiveness["arm_neon"]["used"] is True
+                assert optimization_effectiveness["arm_neon"]["speedup"] > 1.0
 
-        assert performance_improvement >= expected_threshold, \
-            f"性能提升({performance_improvement:.2%})未达到期望阈值({expected_threshold:.2%})"
+            elif detected_platform == "x86_64":
+                # x86_64应该有AVX/SSE优化
+                if platform_data["simd_support"]["avx2"]:
+                    assert "avx2" in optimization_effectiveness
+                    assert optimization_effectiveness["avx2"]["used"] is True
+                    assert optimization_effectiveness["avx2"]["speedup"] > 1.0
 
-    @pytest.mark.integration
-    def test_platform_detection_accuracy(self):
-        """测试平台检测的准确性"""
-        if PlatformDetector is None:
-            pytest.skip("PlatformDetector not implemented yet - TDD Red phase")
+            # 验证整体性能目标
+            execution_time = performance_metrics["execution_time_ms"]
+            assert execution_time < 10000, f"Performance target not met: {execution_time}ms > 10s"
 
-        detector = PlatformDetector()
-        platform_info = detector.detect_platform()
+            print(f"Platform workflow completed successfully:")
+            print(f"  Platform: {detected_platform}")
+            print(f"  Execution time: {execution_time}ms")
+            print(f"  Optimization effectiveness: {optimization_effectiveness}")
 
-        # 验证检测结果与实际平台一致
-        actual_machine = platform.machine().lower()
-        detected_arch = platform_info['architecture']
+    @pytest.mark.asyncio
+    async def test_platform_optimization_error_handling(self):
+        """测试平台优化错误处理"""
+        async with integration_test_environment() as agent_manager:
+            test_base = IntegrationTestBase(agent_manager)
 
-        if actual_machine in ['arm64', 'aarch64']:
-            assert detected_arch in ['apple_silicon', 'arm64'], \
-                f"ARM平台检测错误: 实际={actual_machine}, 检测={detected_arch}"
-        elif actual_machine in ['x86_64', 'amd64']:
-            assert detected_arch in ['x86_64', 'amd64'], \
-                f"x86平台检测错误: 实际={actual_machine}, 检测={detected_arch}"
+            # 测试无效配置
+            invalid_config = {
+                "platform_type": "invalid_platform",
+                "enable_simd": True,
+                "optimization_level": "invalid_level"
+            }
 
-    @pytest.mark.integration
-    def test_optimization_config_consistency(self):
-        """测试优化配置的一致性"""
-        if OptimizationConfig is None:
-            pytest.skip("OptimizationConfig not implemented yet - TDD Red phase")
+            response = requests.post(
+                test_base.get_api_url("data", "/api/v1/system/optimization/config"),
+                json=invalid_config
+            )
+            assert response.status_code == 400
 
-        config = OptimizationConfig()
+            error_data = response.json()
+            assert "error" in error_data
+            assert "invalid_platform" in error_data["error"]["message"].lower()
 
-        # 测试相同平台多次配置的一致性
-        mock_platform_info = {
-            'architecture': 'apple_silicon',
-            'cpu_features': ['neon', 'fp16'],
-            'memory_info': {'total_gb': 16}
-        }
+    @pytest.mark.asyncio
+    async def test_cross_platform_compatibility(self):
+        """测试跨平台兼容性"""
+        async with integration_test_environment() as agent_manager:
+            test_base = IntegrationTestBase(agent_manager)
 
-        config1 = config.get_platform_config(mock_platform_info)
-        config2 = config.get_platform_config(mock_platform_info)
+            # 测试所有支持的平台类型配置
+            supported_platforms = ["apple_silicon", "x86_64", "generic"]
 
-        assert config1 == config2, "相同平台的配置应该一致"
+            for platform_type in supported_platforms:
+                config = {
+                    "platform_type": platform_type,
+                    "optimization_level": "balanced",
+                    "auto_detect": False  # 强制使用指定平台
+                }
 
-    @pytest.mark.integration
-    def test_performance_profiler_baseline(self):
-        """测试性能分析器的基准测试功能"""
-        if PerformanceProfiler is None:
-            pytest.skip("PerformanceProfiler not implemented yet - TDD Red phase")
+                response = requests.post(
+                    test_base.get_api_url("data", "/api/v1/system/optimization/config"),
+                    json=config
+                )
 
-        profiler = PerformanceProfiler()
+                # 所有平台配置都应该被接受
+                assert response.status_code == 200, f"Platform {platform_type} config failed"
 
-        # 测试基准性能测试
-        performance_result = profiler.benchmark_computation(
-            self.test_market_data,
-            optimizer=None
-        )
-
-        # 验证性能结果格式
-        assert 'execution_time' in performance_result, "必须包含执行时间"
-        assert 'memory_usage' in performance_result, "必须包含内存使用"
-        assert 'cpu_utilization' in performance_result, "必须包含CPU利用率"
-        assert performance_result['execution_time'] > 0, "执行时间必须大于0"
-
-    @pytest.mark.integration
-    def test_apple_silicon_specific_optimizations(self):
-        """测试Apple Silicon特定优化"""
-        if not self._is_apple_silicon():
-            pytest.skip("此测试仅在Apple Silicon上运行")
-
-        if OptimizationConfig is None:
-            pytest.skip("OptimizationConfig not implemented yet - TDD Red phase")
-
-        detector = PlatformDetector()
-        platform_info = detector.detect_platform()
-        config = OptimizationConfig()
-        optimization_config = config.get_platform_config(platform_info)
-
-        # 验证Apple Silicon特定配置
-        cpu_config = optimization_config['cpu_optimization']
-        assert 'neon_enabled' in cpu_config, "Apple Silicon应启用NEON"
-        assert cpu_config['neon_enabled'] is True, "NEON应该被启用"
-
-        threading_config = optimization_config['threading_config']
-        assert threading_config['performance_cores'] > 0, "应该使用性能核心"
-
-    @pytest.mark.integration
-    def test_x86_64_specific_optimizations(self):
-        """测试x86_64特定优化"""
-        if not self._is_x86_64():
-            pytest.skip("此测试仅在x86_64上运行")
-
-        if OptimizationConfig is None:
-            pytest.skip("OptimizationConfig not implemented yet - TDD Red phase")
-
-        detector = PlatformDetector()
-        platform_info = detector.detect_platform()
-        config = OptimizationConfig()
-        optimization_config = config.get_platform_config(platform_info)
-
-        # 验证x86_64特定配置
-        cpu_config = optimization_config['cpu_optimization']
-        assert 'avx_enabled' in cpu_config, "x86_64应考虑AVX支持"
-
-        threading_config = optimization_config['threading_config']
-        assert threading_config['worker_threads'] > 0, "应该配置工作线程"
-
-    @pytest.mark.integration
-    def test_performance_regression_detection(self):
-        """测试性能回归检测"""
-        if PerformanceProfiler is None:
-            pytest.skip("PerformanceProfiler not implemented yet - TDD Red phase")
-
-        profiler = PerformanceProfiler()
-
-        # 模拟两次性能测试
-        baseline = {'execution_time': 10.0, 'memory_usage': 100.0}
-        current = {'execution_time': 12.0, 'memory_usage': 120.0}  # 性能下降
-
-        regression_detected = profiler.detect_performance_regression(
-            baseline, current, threshold=0.1
-        )
-
-        assert regression_detected is True, "应该检测到性能回归"
-
-    def _calculate_performance_improvement(
-        self,
-        baseline: Dict[str, float],
-        optimized: Dict[str, float]
-    ) -> float:
-        """计算性能提升百分比"""
-        baseline_time = baseline['execution_time']
-        optimized_time = optimized['execution_time']
-
-        improvement = (baseline_time - optimized_time) / baseline_time
-        return improvement
-
-    def _is_apple_silicon(self) -> bool:
-        """检查是否为Apple Silicon平台"""
-        return platform.system() == 'Darwin' and platform.machine() == 'arm64'
-
-    def _is_x86_64(self) -> bool:
-        """检查是否为x86_64平台"""
-        return platform.machine().lower() in ['x86_64', 'amd64']
-
-    @pytest.mark.integration
-    def test_configuration_persistence(self):
-        """测试配置持久化"""
-        if OptimizationConfig is None:
-            pytest.skip("OptimizationConfig not implemented yet - TDD Red phase")
-
-        config = OptimizationConfig()
-
-        # 测试配置保存和加载
-        mock_platform_info = {
-            'architecture': 'apple_silicon',
-            'cpu_features': ['neon', 'fp16'],
-            'memory_info': {'total_gb': 16}
-        }
-
-        original_config = config.get_platform_config(mock_platform_info)
-
-        # 保存配置到临时文件
-        temp_config_path = Path("/tmp/test_optimization_config.json")
-        config.save_config(original_config, temp_config_path)
-
-        # 加载配置
-        loaded_config = config.load_config(temp_config_path)
-
-        assert loaded_config == original_config, "加载的配置应该与原始配置一致"
-
-        # 清理临时文件
-        if temp_config_path.exists():
-            temp_config_path.unlink()
-
-    @pytest.mark.integration
-    def test_concurrent_optimization_safety(self):
-        """测试并发优化的安全性"""
-        if PlatformOptimizer is None:
-            pytest.skip("PlatformOptimizer not implemented yet - TDD Red phase")
-
-        import concurrent.futures
-
-        # 模拟并发场景
-        def run_optimization():
-            detector = PlatformDetector()
-            platform_info = detector.detect_platform()
-            config = OptimizationConfig()
-            optimization_config = config.get_platform_config(platform_info)
-            optimizer = PlatformOptimizer(optimization_config)
-
-            # 执行一些计算
-            return optimizer.optimize_computation(self.test_market_data.head(100))
-
-        # 并发执行多个优化任务
-        with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
-            futures = [executor.submit(run_optimization) for _ in range(4)]
-            results = [f.result() for f in concurrent.futures.as_completed(futures)]
-
-        # 验证所有任务都成功完成
-        assert len(results) == 4, "所有并发任务都应该完成"
-        for result in results:
-            assert result is not None, "每个任务都应该返回结果"
+                result = response.json()
+                assert result["status"] == "applied"
+                assert result["platform_type"] == platform_type

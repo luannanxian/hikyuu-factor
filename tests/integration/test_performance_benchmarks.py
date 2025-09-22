@@ -24,7 +24,11 @@ import threading
 import multiprocessing
 import json
 import gc
-import memory_profiler
+try:
+    import memory_profiler
+    HAS_MEMORY_PROFILER = True
+except ImportError:
+    HAS_MEMORY_PROFILER = False
 
 # 导入系统模块
 try:

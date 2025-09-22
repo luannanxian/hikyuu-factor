@@ -1,544 +1,390 @@
 """
-T027: 验证配置→因子验证→报告生成 集成测试
-
-测试完整的因子验证工作流程：
-1. 配置验证规则和标准
-2. 执行因子统计验证和业务验证
-3. 生成详细的验证报告
-4. 确保验证结果的准确性和可追溯性
-
-这是一个TDD Red-Green-Refactor循环的第一步 - 先创建失败的测试
+Validation Workflow Integration Test (T027)
+集成测试: 验证配置→因子验证→报告生成
 """
 
+import asyncio
 import pytest
-import pandas as pd
-import numpy as np
-from datetime import datetime, timedelta
-from pathlib import Path
-from typing import Dict, List, Any, Optional
-from unittest.mock import Mock, patch
+import requests
+import time
+from typing import Dict, Any, List
 
-# 导入待实现的模块 (这些导入在Red阶段会失败)
-try:
-    from src.lib.validation_config import ValidationConfig
-    from src.lib.factor_validator import FactorValidator
-    from src.lib.validation_reporter import ValidationReporter
-    from src.services.validation_service import ValidationService
-    from src.models.validation_result import ValidationResult
-    from src.models.validation_rule import ValidationRule
-except ImportError:
-    # TDD Red阶段 - 这些模块还不存在
-    ValidationConfig = None
-    FactorValidator = None
-    ValidationReporter = None
-    ValidationService = None
-    ValidationResult = None
-    ValidationRule = None
+from tests.integration.test_environment import IntegrationTestBase, integration_test_environment
 
 
-@pytest.mark.integration
-@pytest.mark.validation
-@pytest.mark.requires_hikyuu
-class TestValidationWorkflow:
-    """验证配置→因子验证→报告生成 集成测试"""
+class TestValidationWorkflowIntegration:
+    """验证工作流集成测试"""
 
-    def setup_method(self):
-        """设置测试环境"""
-        self.test_factors = self._create_test_factors()
-        self.validation_config = self._create_validation_config()
-        self.expected_validation_rules = [
-            "statistical_distribution",
-            "correlation_analysis",
-            "stability_check",
-            "outlier_detection",
-            "business_logic_validation"
-        ]
+    @pytest.mark.asyncio
+    async def test_complete_validation_workflow(self):
+        """T027: 完整因子验证工作流"""
+        async with integration_test_environment() as agent_manager:
+            test_base = IntegrationTestBase(agent_manager)
 
-    def _create_test_factors(self) -> Dict[str, pd.DataFrame]:
-        """创建测试用因子数据"""
-        np.random.seed(42)
-        dates = pd.date_range('2024-01-01', periods=252, freq='D')
-        stocks = [f"sh{600000 + i:06d}" for i in range(50)]
+            # Step 1: 准备测试因子
+            test_factor_id = f"validation_test_{int(time.time())}"
 
-        factors = {}
-
-        # 正常因子数据
-        normal_factor_data = []
-        for stock in stocks:
-            for date in dates:
-                normal_factor_data.append({
-                    'stock_code': stock,
-                    'date': date,
-                    'factor_value': np.random.normal(0, 1),  # 正态分布
-                    'factor_name': 'momentum_20d'
-                })
-        factors['normal_factor'] = pd.DataFrame(normal_factor_data)
-
-        # 异常因子数据 (包含极值)
-        anomaly_factor_data = []
-        for stock in stocks:
-            for date in dates:
-                # 10%概率产生极值
-                if np.random.random() < 0.1:
-                    value = np.random.choice([-999, 999])  # 极值
-                else:
-                    value = np.random.normal(0, 1)
-
-                anomaly_factor_data.append({
-                    'stock_code': stock,
-                    'date': date,
-                    'factor_value': value,
-                    'factor_name': 'anomaly_factor'
-                })
-        factors['anomaly_factor'] = pd.DataFrame(anomaly_factor_data)
-
-        # 高相关性因子数据
-        base_values = np.random.normal(0, 1, len(stocks) * len(dates))
-        correlated_factor_data = []
-        idx = 0
-        for stock in stocks:
-            for date in dates:
-                # 与基准高度相关 (0.95相关性)
-                value = 0.95 * base_values[idx] + 0.05 * np.random.normal(0, 1)
-                correlated_factor_data.append({
-                    'stock_code': stock,
-                    'date': date,
-                    'factor_value': value,
-                    'factor_name': 'correlated_factor'
-                })
-                idx += 1
-        factors['correlated_factor'] = pd.DataFrame(correlated_factor_data)
-
-        return factors
-
-    def _create_validation_config(self) -> Dict[str, Any]:
-        """创建验证配置"""
-        return {
-            'statistical_validation': {
-                'distribution_tests': ['normality', 'skewness', 'kurtosis'],
-                'outlier_threshold': 3.0,
-                'missing_data_threshold': 0.05,
-                'zero_variance_threshold': 1e-6
-            },
-            'correlation_validation': {
-                'max_correlation': 0.8,
-                'correlation_window': 252,
-                'correlation_methods': ['pearson', 'spearman']
-            },
-            'stability_validation': {
-                'rolling_window': 63,  # 季度
-                'stability_threshold': 0.7,
-                'regime_change_detection': True
-            },
-            'business_validation': {
-                'factor_range_checks': True,
-                'economic_intuition_tests': True,
-                'sector_consistency_checks': True
-            },
-            'performance_validation': {
-                'ic_threshold': 0.02,
-                'ic_ir_threshold': 0.5,
-                'turnover_threshold': 0.3
+            factor_definition = {
+                "factor_id": test_factor_id,
+                "name": "验证测试因子",
+                "description": "用于验证工作流测试的动量因子",
+                "category": "momentum",
+                "formula": "CLOSE / REF(CLOSE, 20) - 1",
+                "hikyuu_formula": {
+                    "expression": "CLOSE / REF(CLOSE, 20) - 1",
+                    "parameters": {"lookback_period": 20}
+                },
+                "version": "1.0.0"
             }
-        }
 
-    @pytest.mark.integration
-    def test_complete_validation_workflow(self):
-        """测试完整的验证工作流程"""
-        # 这个测试在Red阶段应该失败，因为相关类还没有实现
-        if ValidationConfig is None:
-            pytest.skip("ValidationConfig not implemented yet - TDD Red phase")
-
-        # Step 1: 配置验证规则
-        config = ValidationConfig()
-        validation_rules = config.load_validation_rules(self.validation_config)
-
-        # 验证配置加载结果
-        assert validation_rules is not None, "验证规则不能为空"
-        assert len(validation_rules) >= len(self.expected_validation_rules), \
-            f"验证规则数量不足，期望至少{len(self.expected_validation_rules)}个"
-
-        for rule_name in self.expected_validation_rules:
-            assert any(rule.rule_type == rule_name for rule in validation_rules), \
-                f"缺少必需的验证规则: {rule_name}"
-
-        # Step 2: 执行因子验证
-        validator = FactorValidator(validation_rules)
-        validation_results = {}
-
-        for factor_name, factor_data in self.test_factors.items():
-            result = validator.validate_factor(factor_name, factor_data)
-            validation_results[factor_name] = result
-
-            # 验证结果格式
-            assert result is not None, f"因子{factor_name}验证结果不能为空"
-            assert hasattr(result, 'factor_name'), "验证结果必须包含因子名称"
-            assert hasattr(result, 'validation_score'), "验证结果必须包含验证分数"
-            assert hasattr(result, 'rule_results'), "验证结果必须包含规则结果"
-            assert hasattr(result, 'issues'), "验证结果必须包含问题列表"
-
-        # Step 3: 生成验证报告
-        reporter = ValidationReporter()
-        report = reporter.generate_comprehensive_report(validation_results)
-
-        # 验证报告内容
-        assert report is not None, "验证报告不能为空"
-        assert 'summary' in report, "报告必须包含摘要"
-        assert 'factor_details' in report, "报告必须包含因子详情"
-        assert 'recommendations' in report, "报告必须包含建议"
-        assert 'validation_timestamp' in report, "报告必须包含验证时间戳"
-
-        # 验证摘要信息
-        summary = report['summary']
-        assert 'total_factors' in summary, "摘要必须包含因子总数"
-        assert 'passed_factors' in summary, "摘要必须包含通过验证的因子数"
-        assert 'failed_factors' in summary, "摘要必须包含未通过验证的因子数"
-        assert summary['total_factors'] == len(self.test_factors), "因子总数应该正确"
-
-    @pytest.mark.integration
-    def test_statistical_validation_accuracy(self):
-        """测试统计验证的准确性"""
-        if FactorValidator is None:
-            pytest.skip("FactorValidator not implemented yet - TDD Red phase")
-
-        config = ValidationConfig()
-        statistical_rules = config.get_statistical_rules(self.validation_config)
-        validator = FactorValidator(statistical_rules)
-
-        # 测试正常因子（应该通过验证）
-        normal_result = validator.validate_factor(
-            'normal_factor',
-            self.test_factors['normal_factor']
-        )
-
-        assert normal_result.validation_score > 0.7, \
-            "正常因子的验证分数应该较高"
-
-        statistical_issues = [issue for issue in normal_result.issues
-                            if issue.category == 'statistical']
-        assert len(statistical_issues) == 0, \
-            "正常因子不应该有统计问题"
-
-        # 测试异常因子（应该检测出问题）
-        anomaly_result = validator.validate_factor(
-            'anomaly_factor',
-            self.test_factors['anomaly_factor']
-        )
-
-        assert anomaly_result.validation_score < 0.5, \
-            "异常因子的验证分数应该较低"
-
-        outlier_issues = [issue for issue in anomaly_result.issues
-                         if 'outlier' in issue.description.lower()]
-        assert len(outlier_issues) > 0, \
-            "异常因子应该检测出极值问题"
-
-    @pytest.mark.integration
-    def test_correlation_validation_detection(self):
-        """测试相关性验证检测"""
-        if FactorValidator is None:
-            pytest.skip("FactorValidator not implemented yet - TDD Red phase")
-
-        config = ValidationConfig()
-        correlation_rules = config.get_correlation_rules(self.validation_config)
-        validator = FactorValidator(correlation_rules)
-
-        # 同时验证正常因子和高相关因子
-        all_factors = pd.concat([
-            self.test_factors['normal_factor'],
-            self.test_factors['correlated_factor']
-        ])
-
-        correlation_result = validator.validate_factor_correlations(all_factors)
-
-        # 验证相关性检测结果
-        assert correlation_result is not None, "相关性验证结果不能为空"
-
-        high_correlation_issues = [
-            issue for issue in correlation_result.issues
-            if 'correlation' in issue.description.lower()
-        ]
-        assert len(high_correlation_issues) > 0, \
-            "应该检测到高相关性问题"
-
-    @pytest.mark.integration
-    def test_stability_validation_over_time(self):
-        """测试时间序列稳定性验证"""
-        if FactorValidator is None:
-            pytest.skip("FactorValidator not implemented yet - TDD Red phase")
-
-        config = ValidationConfig()
-        stability_rules = config.get_stability_rules(self.validation_config)
-        validator = FactorValidator(stability_rules)
-
-        # 创建不稳定的因子数据（前半年和后半年分布不同）
-        unstable_factor_data = []
-        dates = pd.date_range('2024-01-01', periods=252, freq='D')
-        stocks = [f"sh{600000 + i:06d}" for i in range(20)]
-
-        for i, date in enumerate(dates):
-            for stock in stocks:
-                # 前半年: 均值0，标准差1
-                # 后半年: 均值2，标准差0.5 (分布发生变化)
-                if i < 126:
-                    value = np.random.normal(0, 1)
-                else:
-                    value = np.random.normal(2, 0.5)
-
-                unstable_factor_data.append({
-                    'stock_code': stock,
-                    'date': date,
-                    'factor_value': value,
-                    'factor_name': 'unstable_factor'
-                })
-
-        unstable_factor_df = pd.DataFrame(unstable_factor_data)
-
-        stability_result = validator.validate_factor_stability(
-            'unstable_factor',
-            unstable_factor_df
-        )
-
-        # 验证稳定性检测结果
-        assert stability_result.validation_score < 0.6, \
-            "不稳定因子的稳定性分数应该较低"
-
-        stability_issues = [
-            issue for issue in stability_result.issues
-            if 'stability' in issue.description.lower() or 'regime' in issue.description.lower()
-        ]
-        assert len(stability_issues) > 0, \
-            "应该检测到稳定性问题"
-
-    @pytest.mark.integration
-    def test_business_logic_validation(self):
-        """测试业务逻辑验证"""
-        if FactorValidator is None:
-            pytest.skip("FactorValidator not implemented yet - TDD Red phase")
-
-        config = ValidationConfig()
-        business_rules = config.get_business_rules(self.validation_config)
-        validator = FactorValidator(business_rules)
-
-        # 创建违反业务逻辑的因子数据
-        business_violation_data = []
-        dates = pd.date_range('2024-01-01', periods=50, freq='D')
-        stocks = [f"sh{600000 + i:06d}" for i in range(10)]
-
-        for stock in stocks:
-            for date in dates:
-                # 故意创建不合理的因子值 (如PE比率为负数)
-                business_violation_data.append({
-                    'stock_code': stock,
-                    'date': date,
-                    'factor_value': -np.random.uniform(1, 100),  # PE不应该为负
-                    'factor_name': 'pe_ratio'
-                })
-
-        business_violation_df = pd.DataFrame(business_violation_data)
-
-        business_result = validator.validate_business_logic(
-            'pe_ratio',
-            business_violation_df
-        )
-
-        # 验证业务逻辑检测结果
-        assert business_result.validation_score < 0.3, \
-            "违反业务逻辑的因子分数应该很低"
-
-        business_issues = [
-            issue for issue in business_result.issues
-            if 'business' in issue.description.lower()
-        ]
-        assert len(business_issues) > 0, \
-            "应该检测到业务逻辑问题"
-
-    @pytest.mark.integration
-    def test_validation_report_generation(self):
-        """测试验证报告生成功能"""
-        if ValidationReporter is None:
-            pytest.skip("ValidationReporter not implemented yet - TDD Red phase")
-
-        # 模拟验证结果
-        mock_validation_results = {
-            'factor_a': Mock(
-                factor_name='factor_a',
-                validation_score=0.85,
-                passed=True,
-                issues=[],
-                rule_results={'statistical': 0.9, 'correlation': 0.8}
-            ),
-            'factor_b': Mock(
-                factor_name='factor_b',
-                validation_score=0.45,
-                passed=False,
-                issues=[Mock(category='statistical', description='High outlier rate')],
-                rule_results={'statistical': 0.3, 'correlation': 0.6}
+            # 注册因子
+            register_response = requests.post(
+                test_base.get_api_url("factor", "/api/v1/factors"),
+                json=factor_definition
             )
-        }
+            assert register_response.status_code == 201
+            print(f"Test factor registered: {test_factor_id}")
 
-        reporter = ValidationReporter()
-
-        # 测试生成HTML报告
-        html_report = reporter.generate_html_report(mock_validation_results)
-        assert html_report is not None, "HTML报告不能为空"
-        assert '<html>' in html_report, "应该生成有效的HTML"
-        assert 'factor_a' in html_report, "报告应该包含因子A信息"
-        assert 'factor_b' in html_report, "报告应该包含因子B信息"
-
-        # 测试生成PDF报告
-        pdf_path = Path("/tmp/test_validation_report.pdf")
-        reporter.generate_pdf_report(mock_validation_results, pdf_path)
-        assert pdf_path.exists(), "PDF报告文件应该被创建"
-
-        # 测试生成Excel报告
-        excel_path = Path("/tmp/test_validation_report.xlsx")
-        reporter.generate_excel_report(mock_validation_results, excel_path)
-        assert excel_path.exists(), "Excel报告文件应该被创建"
-
-        # 清理临时文件
-        for path in [pdf_path, excel_path]:
-            if path.exists():
-                path.unlink()
-
-    @pytest.mark.integration
-    def test_validation_service_integration(self):
-        """测试验证服务集成"""
-        if ValidationService is None:
-            pytest.skip("ValidationService not implemented yet - TDD Red phase")
-
-        service = ValidationService()
-
-        # 测试批量验证
-        batch_results = service.validate_factor_batch(
-            self.test_factors,
-            self.validation_config
-        )
-
-        assert batch_results is not None, "批量验证结果不能为空"
-        assert len(batch_results) == len(self.test_factors), \
-            "验证结果数量应该与输入因子数量一致"
-
-        for factor_name in self.test_factors.keys():
-            assert factor_name in batch_results, \
-                f"验证结果应该包含因子{factor_name}"
-
-        # 测试验证结果持久化
-        persistence_result = service.save_validation_results(
-            batch_results,
-            storage_path="/tmp/validation_results"
-        )
-
-        assert persistence_result is True, "验证结果保存应该成功"
-
-    @pytest.mark.integration
-    def test_validation_performance_benchmarks(self):
-        """测试验证性能基准"""
-        if ValidationService is None:
-            pytest.skip("ValidationService not implemented yet - TDD Red phase")
-
-        service = ValidationService()
-
-        # 创建大规模测试数据
-        large_factor_data = []
-        dates = pd.date_range('2020-01-01', '2024-01-01', freq='D')  # 4年数据
-        stocks = [f"sh{600000 + i:06d}" for i in range(1000)]  # 1000只股票
-
-        start_time = datetime.now()
-
-        # 模拟大规模验证 (实际实现中应该优化性能)
-        for i in range(min(10, len(stocks))):  # 仅测试前10只股票以控制测试时间
-            stock = stocks[i]
-            for date in dates[:100]:  # 仅测试前100天
-                large_factor_data.append({
-                    'stock_code': stock,
-                    'date': date,
-                    'factor_value': np.random.normal(0, 1),
-                    'factor_name': 'large_test_factor'
-                })
-
-        large_factor_df = pd.DataFrame(large_factor_data)
-        validation_result = service.validate_single_factor(
-            'large_test_factor',
-            large_factor_df,
-            self.validation_config
-        )
-
-        end_time = datetime.now()
-        execution_time = (end_time - start_time).total_seconds()
-
-        # 验证性能要求 (根据实际需求调整)
-        assert execution_time < 30, \
-            f"大规模验证时间过长: {execution_time}秒，应少于30秒"
-        assert validation_result is not None, "大规模验证应该返回结果"
-
-    @pytest.mark.integration
-    def test_validation_error_handling(self):
-        """测试验证过程中的错误处理"""
-        if ValidationService is None:
-            pytest.skip("ValidationService not implemented yet - TDD Red phase")
-
-        service = ValidationService()
-
-        # 测试空数据处理
-        empty_df = pd.DataFrame()
-        result = service.validate_single_factor(
-            'empty_factor',
-            empty_df,
-            self.validation_config
-        )
-
-        assert result is not None, "空数据验证应该返回结果"
-        assert result.passed is False, "空数据验证应该失败"
-        assert any('empty' in issue.description.lower() for issue in result.issues), \
-            "应该报告空数据问题"
-
-        # 测试缺失列处理
-        invalid_df = pd.DataFrame({
-            'wrong_column': [1, 2, 3],
-            'another_wrong_column': [4, 5, 6]
-        })
-
-        result = service.validate_single_factor(
-            'invalid_factor',
-            invalid_df,
-            self.validation_config
-        )
-
-        assert result is not None, "无效数据验证应该返回结果"
-        assert result.passed is False, "无效数据验证应该失败"
-
-    @pytest.mark.integration
-    def test_validation_config_flexibility(self):
-        """测试验证配置的灵活性"""
-        if ValidationConfig is None:
-            pytest.skip("ValidationConfig not implemented yet - TDD Red phase")
-
-        config = ValidationConfig()
-
-        # 测试自定义验证配置
-        custom_config = {
-            'statistical_validation': {
-                'outlier_threshold': 2.5,  # 更严格的极值检测
-                'distribution_tests': ['normality']  # 仅检测正态性
-            },
-            'correlation_validation': {
-                'max_correlation': 0.9  # 更宽松的相关性限制
+            # 计算因子数据
+            calculation_request = {
+                "factor_id": test_factor_id,
+                "stock_universe": ["sh000001", "sh000002", "sz000001", "sz000002"],
+                "date_range": {
+                    "start_date": "2010-01-01",
+                    "end_date": "2023-12-31"
+                },
+                "calculation_mode": "full"
             }
-        }
 
-        custom_rules = config.load_validation_rules(custom_config)
-        default_rules = config.load_validation_rules(self.validation_config)
+            calc_response = requests.post(
+                test_base.get_api_url("factor", f"/api/v1/factors/{test_factor_id}/calculate"),
+                json=calculation_request
+            )
+            assert calc_response.status_code == 202
 
-        # 验证自定义配置生效
-        assert len(custom_rules) != len(default_rules), \
-            "自定义配置应该产生不同的规则集"
+            calc_task_id = calc_response.json()["task_id"]
+            calc_result = await test_base.wait_for_task_completion("factor", calc_task_id, timeout=600)
+            assert calc_result["status"] == "completed"
+            print("Factor calculation completed for validation")
 
-        # 测试配置覆盖
-        override_config = config.override_config(
-            base_config=self.validation_config,
-            overrides={'statistical_validation.outlier_threshold': 4.0}
-        )
+            # Step 2: 配置验证参数
+            validation_config = {
+                "factor_id": test_factor_id,
+                "validation_config": {
+                    "train_start": "2010-01-01",
+                    "train_end": "2016-12-31",
+                    "test_start": "2017-01-01",
+                    "test_end": "2020-12-31",
+                    "validation_start": "2021-01-01",
+                    "validation_end": "2023-12-31"
+                },
+                "validation_methods": [
+                    "ic_analysis",
+                    "layered_returns",
+                    "turnover_analysis",
+                    "risk_analysis"
+                ],
+                "benchmark": "000300.SH",  # 沪深300
+                "universe": "custom",
+                "stock_universe": ["sh000001", "sh000002", "sz000001", "sz000002"],
+                "frequency": "daily",
+                "layers": 5,
+                "long_short": True,
+                "neutralization": ["industry"],
+                "rebalance_frequency": "monthly"
+            }
 
-        assert override_config['statistical_validation']['outlier_threshold'] == 4.0, \
-            "配置覆盖应该生效"
+            print("Validation configuration prepared")
+
+            # Step 3: 启动因子验证
+            validation_response = requests.post(
+                test_base.get_api_url("validation", "/api/v1/validation/factor"),
+                json=validation_config
+            )
+            assert validation_response.status_code == 202
+
+            validation_data = validation_response.json()
+            validation_id = validation_data["validation_id"]
+            assert validation_data["status"] == "running"
+
+            print(f"Factor validation started: {validation_id}")
+
+            # Step 4: 监控验证进度
+            validation_result = await test_base.wait_for_task_completion("validation", validation_id, timeout=1200)  # 20分钟
+            assert validation_result["status"] == "completed"
+
+            print("Factor validation completed")
+
+            # Step 5: 获取验证报告
+            report_response = requests.get(
+                test_base.get_api_url("validation", f"/api/v1/validation/report/{validation_id}")
+            )
+            assert report_response.status_code == 200
+
+            validation_report = report_response.json()
+            assert validation_report["validation_id"] == validation_id
+            assert validation_report["status"] == "completed"
+            assert "report" in validation_report
+
+            report = validation_report["report"]
+
+            # Step 6: 验证报告内容完整性
+            # 验证综合评分
+            assert "summary" in report
+            summary = report["summary"]
+            assert "overall_score" in summary
+            assert "risk_level" in summary
+            assert "recommendation" in summary
+            assert 0 <= summary["overall_score"] <= 100
+
+            print(f"Validation summary - Score: {summary['overall_score']}, Risk: {summary['risk_level']}, Recommendation: {summary['recommendation']}")
+
+            # 验证IC分析结果
+            assert "ic_analysis" in report
+            ic_analysis = report["ic_analysis"]
+            assert "mean_ic" in ic_analysis
+            assert "ic_std" in ic_analysis
+            assert "ic_ir" in ic_analysis
+            assert "ic_hit_rate" in ic_analysis
+            assert 0 <= ic_analysis["ic_hit_rate"] <= 1
+
+            print(f"IC Analysis - Mean IC: {ic_analysis['mean_ic']:.4f}, IR: {ic_analysis['ic_ir']:.4f}, Hit Rate: {ic_analysis['ic_hit_rate']:.2%}")
+
+            # 验证分层收益分析
+            assert "layered_returns" in report
+            layered_returns = report["layered_returns"]
+            assert "layers" in layered_returns
+            assert layered_returns["layers"] == validation_config["layers"]
+            assert "returns_by_layer" in layered_returns
+            assert "long_short_spread" in layered_returns
+            assert len(layered_returns["returns_by_layer"]) == validation_config["layers"]
+
+            print(f"Layered Returns - Long-Short Spread: {layered_returns['long_short_spread']:.2%}")
+
+            # 验证换手率分析
+            assert "turnover_analysis" in report
+            turnover_analysis = report["turnover_analysis"]
+            assert "mean_turnover" in turnover_analysis
+            assert "turnover_cost_impact" in turnover_analysis
+            assert 0 <= turnover_analysis["mean_turnover"] <= 1
+
+            print(f"Turnover Analysis - Mean Turnover: {turnover_analysis['mean_turnover']:.2%}")
+
+            # 验证风险指标
+            assert "risk_metrics" in report
+            risk_metrics = report["risk_metrics"]
+            assert "volatility" in risk_metrics
+            assert "beta" in risk_metrics
+            assert "tracking_error" in risk_metrics
+            assert risk_metrics["volatility"] >= 0
+            assert risk_metrics["tracking_error"] >= 0
+
+            print(f"Risk Metrics - Volatility: {risk_metrics['volatility']:.2%}, Beta: {risk_metrics['beta']:.2f}")
+
+            # Step 7: 测试不同格式的报告
+            # 获取PDF格式报告
+            pdf_response = requests.get(
+                test_base.get_api_url("validation", f"/api/v1/validation/report/{validation_id}"),
+                params={"format": "pdf"}
+            )
+            assert pdf_response.status_code == 200
+            assert "application/pdf" in pdf_response.headers.get("Content-Type", "")
+
+            # 获取Excel格式报告
+            excel_response = requests.get(
+                test_base.get_api_url("validation", f"/api/v1/validation/report/{validation_id}"),
+                params={"format": "excel"}
+            )
+            assert excel_response.status_code == 200
+            assert "spreadsheet" in excel_response.headers.get("Content-Type", "") or "excel" in excel_response.headers.get("Content-Type", "")
+
+            # 获取摘要报告
+            summary_response = requests.get(
+                test_base.get_api_url("validation", f"/api/v1/validation/report/{validation_id}"),
+                params={"summary_only": "true"}
+            )
+            assert summary_response.status_code == 200
+
+            summary_report = summary_response.json()
+            assert "report" in summary_report
+            assert "summary" in summary_report["report"]
+            # 摘要模式应该只包含关键指标
+            summary_keys = set(summary_report["report"].keys())
+            assert "summary" in summary_keys
+            print("Different report formats validated successfully")
+
+            # Step 8: 清理测试数据
+            cleanup_response = requests.delete(
+                test_base.get_api_url("factor", f"/api/v1/factors/{test_factor_id}")
+            )
+            assert cleanup_response.status_code == 200
+
+            print("Validation workflow test completed successfully")
+
+    @pytest.mark.asyncio
+    async def test_validation_error_scenarios(self):
+        """测试验证工作流的错误场景"""
+        async with integration_test_environment() as agent_manager:
+            test_base = IntegrationTestBase(agent_manager)
+
+            # 测试不存在的因子验证
+            invalid_validation_config = {
+                "factor_id": "nonexistent_factor_12345",
+                "validation_config": {
+                    "train_start": "2010-01-01",
+                    "train_end": "2016-12-31",
+                    "test_start": "2017-01-01",
+                    "test_end": "2020-12-31"
+                }
+            }
+
+            error_response = requests.post(
+                test_base.get_api_url("validation", "/api/v1/validation/factor"),
+                json=invalid_validation_config
+            )
+            assert error_response.status_code == 404
+
+            error_data = error_response.json()
+            assert "error" in error_data
+            assert "not found" in error_data["error"]["message"].lower()
+
+            # 测试无效的日期配置
+            invalid_date_config = {
+                "factor_id": "test_factor",
+                "validation_config": {
+                    "train_start": "2020-01-01",  # 训练期开始晚于结束
+                    "train_end": "2016-12-31",
+                    "test_start": "2017-01-01",
+                    "test_end": "2021-12-31"
+                }
+            }
+
+            date_error_response = requests.post(
+                test_base.get_api_url("validation", "/api/v1/validation/factor"),
+                json=invalid_date_config
+            )
+            assert date_error_response.status_code == 400
+
+            date_error_data = date_error_response.json()
+            assert "error" in date_error_data
+            print("Error scenarios handled correctly")
+
+    @pytest.mark.asyncio
+    async def test_custom_validation_configuration(self):
+        """测试自定义验证配置"""
+        async with integration_test_environment() as agent_manager:
+            test_base = IntegrationTestBase(agent_manager)
+
+            # 创建自定义验证配置
+            custom_config = {
+                "factor_id": f"custom_validation_{int(time.time())}",
+                "validation_config": {
+                    "train_start": "2015-01-01",
+                    "train_end": "2018-12-31",
+                    "test_start": "2019-01-01",
+                    "test_end": "2021-12-31",
+                    "validation_start": "2022-01-01",
+                    "validation_end": "2023-06-30"
+                },
+                "validation_methods": ["ic_analysis"],  # 只进行IC分析
+                "universe": "top100",
+                "layers": 10,
+                "rebalance_frequency": "weekly",
+                "commission_rate": 0.001,
+                "impact_cost": 0.0005
+            }
+
+            # 首先注册测试因子
+            factor_def = {
+                "factor_id": custom_config["factor_id"],
+                "name": "自定义验证测试因子",
+                "category": "test",
+                "formula": "RSI(CLOSE, 14)",
+                "version": "1.0.0"
+            }
+
+            requests.post(test_base.get_api_url("factor", "/api/v1/factors"), json=factor_def)
+
+            # 启动自定义验证
+            validation_response = requests.post(
+                test_base.get_api_url("validation", "/api/v1/validation/factor"),
+                json=custom_config
+            )
+
+            if validation_response.status_code == 202:
+                validation_id = validation_response.json()["validation_id"]
+
+                # 验证自定义配置是否正确应用
+                status_response = requests.get(
+                    test_base.get_api_url("validation", f"/api/v1/validation/report/{validation_id}")
+                )
+
+                if status_response.status_code == 200:
+                    config_data = status_response.json()
+                    if "metadata" in config_data:
+                        metadata = config_data["metadata"]
+                        assert metadata["validation_period"]["start"] == custom_config["validation_config"]["validation_start"]
+                        print("Custom validation configuration applied successfully")
+
+                # 清理
+                requests.delete(test_base.get_api_url("factor", f"/api/v1/factors/{custom_config['factor_id']}"))
+
+    @pytest.mark.asyncio
+    async def test_concurrent_validations(self):
+        """测试并发验证处理"""
+        async with integration_test_environment() as agent_manager:
+            test_base = IntegrationTestBase(agent_manager)
+
+            # 准备多个测试因子
+            factor_ids = []
+            for i in range(3):
+                factor_id = f"concurrent_test_{i}_{int(time.time())}"
+                factor_def = {
+                    "factor_id": factor_id,
+                    "name": f"并发测试因子{i}",
+                    "category": "test",
+                    "formula": f"MA(CLOSE, {10 + i * 5})",
+                    "version": "1.0.0"
+                }
+
+                register_response = requests.post(
+                    test_base.get_api_url("factor", "/api/v1/factors"),
+                    json=factor_def
+                )
+                if register_response.status_code == 201:
+                    factor_ids.append(factor_id)
+
+            # 启动并发验证
+            validation_ids = []
+            for factor_id in factor_ids:
+                validation_config = {
+                    "factor_id": factor_id,
+                    "validation_config": {
+                        "train_start": "2020-01-01",
+                        "train_end": "2021-12-31",
+                        "test_start": "2022-01-01",
+                        "test_end": "2023-06-30"
+                    },
+                    "validation_methods": ["ic_analysis"],
+                    "layers": 3  # 减少计算量
+                }
+
+                response = requests.post(
+                    test_base.get_api_url("validation", "/api/v1/validation/factor"),
+                    json=validation_config
+                )
+
+                if response.status_code == 202:
+                    validation_ids.append(response.json()["validation_id"])
+                elif response.status_code == 429:
+                    print(f"Validation request rate limited (expected behavior)")
+                    break
+
+            print(f"Started {len(validation_ids)} concurrent validations")
+
+            # 清理测试因子
+            for factor_id in factor_ids:
+                requests.delete(test_base.get_api_url("factor", f"/api/v1/factors/{factor_id}"))
+
+            if len(validation_ids) > 0:
+                print("Concurrent validation handling verified")

@@ -7,6 +7,7 @@
 - 测试对象的Mock工厂
 - 数据库测试工具
 - Hikyuu测试辅助函数
+- API契约测试工具
 
 采用"真实优先"策略，最小化mock使用
 """
@@ -21,6 +22,154 @@ from sqlalchemy.orm import Session
 from unittest.mock import Mock, MagicMock
 import random
 import time
+import json
+import jsonschema
+import requests
+
+
+# =============================================================================
+# API契约测试工具 - 新增
+# =============================================================================
+
+def assert_json_schema(data: Dict[str, Any], schema: Dict[str, Any]) -> None:
+    """
+    断言JSON数据符合指定schema
+
+    Args:
+        data: 待验证的JSON数据
+        schema: JSON Schema定义
+
+    Raises:
+        AssertionError: 当数据不符合schema时
+    """
+    try:
+        jsonschema.validate(data, schema)
+    except jsonschema.ValidationError as e:
+        pytest.fail(f"JSON schema validation failed: {e.message}")
+    except Exception as e:
+        pytest.fail(f"Schema validation error: {str(e)}")
+
+
+def get_test_base_url(agent_type: str) -> str:
+    """
+    获取测试环境中指定Agent的基础URL
+
+    Args:
+        agent_type: Agent类型 ('data', 'factor', 'validation', 'signal')
+
+    Returns:
+        str: Agent的基础URL
+    """
+    port_mapping = {
+        'data': 8081,
+        'factor': 8082,
+        'validation': 8083,
+        'signal': 8084
+    }
+
+    if agent_type not in port_mapping:
+        raise ValueError(f"Unknown agent type: {agent_type}")
+
+    return f"http://localhost:{port_mapping[agent_type]}"
+
+
+def assert_response_time(response: requests.Response, max_time_ms: int) -> None:
+    """
+    断言HTTP响应时间在指定范围内
+
+    Args:
+        response: requests.Response对象
+        max_time_ms: 最大允许响应时间（毫秒）
+
+    Raises:
+        AssertionError: 当响应时间超过限制时
+    """
+    response_time_ms = response.elapsed.total_seconds() * 1000
+    assert response_time_ms <= max_time_ms, \
+        f"Response time {response_time_ms:.1f}ms exceeds limit {max_time_ms}ms"
+
+
+def assert_api_error_response(response: requests.Response, expected_status: int,
+                            expected_error_fields: List[str] = None) -> None:
+    """
+    断言API错误响应格式正确
+
+    Args:
+        response: requests.Response对象
+        expected_status: 期望的HTTP状态码
+        expected_error_fields: 期望的错误字段列表
+
+    Raises:
+        AssertionError: 当错误响应格式不正确时
+    """
+    assert response.status_code == expected_status
+
+    try:
+        data = response.json()
+    except json.JSONDecodeError:
+        pytest.fail("Error response should be valid JSON")
+
+    assert "status" in data
+    assert data["status"] == "error"
+
+    if expected_error_fields:
+        for field in expected_error_fields:
+            assert field in data, f"Missing error field: {field}"
+
+
+def create_api_test_schema(schema_type: str) -> Dict[str, Any]:
+    """
+    创建API测试的JSON Schema
+
+    Args:
+        schema_type: schema类型 ("success_response", "error_response", "platform_info")
+
+    Returns:
+        JSON Schema定义
+    """
+    if schema_type == "success_response":
+        return {
+            "type": "object",
+            "properties": {
+                "status": {"type": "string", "enum": ["success"]},
+                "data": {"type": "object"},
+                "message": {"type": "string"}
+            },
+            "required": ["status", "data"]
+        }
+    elif schema_type == "error_response":
+        return {
+            "type": "object",
+            "properties": {
+                "status": {"type": "string", "enum": ["error"]},
+                "error": {"type": "string"},
+                "message": {"type": "string"},
+                "details": {"type": "object"}
+            },
+            "required": ["status"]
+        }
+    elif schema_type == "platform_info":
+        return {
+            "type": "object",
+            "properties": {
+                "platform_type": {
+                    "type": "string",
+                    "enum": ["apple_silicon", "x86_64", "arm64_linux", "generic"]
+                },
+                "cpu_architecture": {"type": "string"},
+                "cpu_count": {"type": "integer", "minimum": 1},
+                "total_memory_gb": {"type": "number", "minimum": 0},
+                "available_memory_gb": {"type": "number", "minimum": 0},
+                "simd_support": {
+                    "type": "array",
+                    "items": {"type": "string"}
+                }
+            },
+            "required": ["platform_type", "cpu_architecture", "cpu_count",
+                        "total_memory_gb", "available_memory_gb", "simd_support"]
+        }
+    else:
+        raise ValueError(f"Unknown schema type: {schema_type}")
 
 
 # =============================================================================

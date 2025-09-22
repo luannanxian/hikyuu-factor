@@ -15,7 +15,9 @@ try:
     from hikyuu import (
         Stock, KData, Query, KQuery, Datetime,
         CLOSE, OPEN, HIGH, LOW, VOL, AMO,
-        MA, EMA, RSI, MACD, KDJ
+        MA, EMA, RSI, MACD, KDJ, BOLL,
+        FINANCE, MF,  # 财务数据和多因子功能
+        StockManager, Timeline
     )
     HIKYUU_AVAILABLE = True
 except ImportError as e:
@@ -27,6 +29,10 @@ except ImportError as e:
     class Query: pass
     class KQuery: pass
     class Datetime: pass
+    class StockManager: pass
+    class Timeline: pass
+    FINANCE = None
+    MF = None
 
 from lib.environment import env_manager, warn_mock_data
 
@@ -174,29 +180,174 @@ class HikyuuDataInterface:
                 return self._get_mock_market_data(stock_code, start_date, end_date)
             raise
 
-    def calculate_factor(self, factor_formula: str, stock_code: str, start_date: date, end_date: date) -> pd.DataFrame:
-        """计算因子值"""
+    def get_financial_data(self, stock_code: str, start_date: date, end_date: date) -> pd.DataFrame:
+        """获取财务数据（使用Hikyuu FINANCE功能）"""
         if not self._initialized:
             self.initialize()
 
-        if not HIKYUU_AVAILABLE or not self._stock_manager:
-            return self._get_mock_factor_data(factor_formula, stock_code, start_date, end_date)
+        if not HIKYUU_AVAILABLE or not self._stock_manager or not FINANCE:
+            return self._get_mock_financial_data(stock_code, start_date, end_date)
 
         try:
             stock = self._stock_manager[stock_code]
             if not stock.valid:
                 raise ValueError(f"Invalid stock code: {stock_code}")
 
-            # 解析并执行因子公式
-            factor_values = self._execute_factor_formula(factor_formula, stock, start_date, end_date)
+            # 使用Hikyuu FINANCE功能获取财务数据
+            financial_data = []
 
-            return factor_values
+            # 获取常用财务指标
+            financial_indicators = {
+                'eps': 'EPS',  # 每股收益
+                'bvps': 'BVPS',  # 每股净资产
+                'roe': 'ROE',  # 净资产收益率
+                'roa': 'ROA',  # 总资产收益率
+                'pe': 'PE',  # 市盈率
+                'pb': 'PB',  # 市净率
+                'total_revenue': 'REVENUE',  # 营业收入
+                'net_profit': 'NETPROFIT',  # 净利润
+                'total_assets': 'TOTALASSETS',  # 总资产
+                'total_equity': 'TOTALEQUITY'  # 股东权益
+            }
+
+            # 获取日期范围内的财务数据
+            current_date = start_date
+            while current_date <= end_date:
+                date_data = {'date': current_date, 'stock_code': stock_code}
+
+                for key, finance_key in financial_indicators.items():
+                    try:
+                        # 使用FINANCE获取指定日期的财务数据
+                        value = FINANCE(stock, hku.Datetime(current_date))[finance_key]
+                        date_data[key] = float(value) if value is not None else None
+                    except Exception as e:
+                        logging.debug(f"Failed to get {finance_key} for {stock_code} on {current_date}: {e}")
+                        date_data[key] = None
+
+                financial_data.append(date_data)
+                current_date += timedelta(days=1)
+
+            return pd.DataFrame(financial_data)
 
         except Exception as e:
-            logging.error(f"Failed to calculate factor: {e}")
+            logging.error(f"Failed to get financial data from Hikyuu: {e}")
             if env_manager.is_mock_data_allowed():
-                return self._get_mock_factor_data(factor_formula, stock_code, start_date, end_date)
+                return self._get_mock_financial_data(stock_code, start_date, end_date)
             raise
+
+    def calculate_multi_factors(self, stock_codes: List[str], start_date: date, end_date: date,
+                               factor_list: List[str]) -> Dict[str, pd.DataFrame]:
+        """使用Hikyuu MF功能批量计算多个因子"""
+        if not self._initialized:
+            self.initialize()
+
+        if not HIKYUU_AVAILABLE or not self._stock_manager or not MF:
+            return self._get_mock_multi_factors(stock_codes, start_date, end_date, factor_list)
+
+        try:
+            # 使用Hikyuu MF(多因子)功能
+            results = {}
+
+            # 构建查询
+            query = KQuery(
+                start=hku.Datetime(start_date),
+                end=hku.Datetime(end_date),
+                ktype=hku.KType.DAY
+            )
+
+            for factor_name in factor_list:
+                factor_data = []
+
+                for stock_code in stock_codes:
+                    try:
+                        stock = self._stock_manager[stock_code]
+                        if not stock.valid:
+                            continue
+
+                        # 根据因子名称选择相应的计算方法
+                        factor_values = self._calculate_factor_with_mf(
+                            stock, query, factor_name
+                        )
+
+                        # 转换为DataFrame格式
+                        for i, value in enumerate(factor_values):
+                            if not pd.isna(value):
+                                factor_data.append({
+                                    'stock_code': stock_code,
+                                    'trade_date': start_date + timedelta(days=i),
+                                    'factor_value': float(value),
+                                    'factor_score': None,
+                                    'percentile_rank': None
+                                })
+
+                    except Exception as e:
+                        logging.warning(f"Failed to calculate {factor_name} for {stock_code}: {e}")
+                        continue
+
+                results[factor_name] = pd.DataFrame(factor_data)
+
+            return results
+
+        except Exception as e:
+            logging.error(f"Failed to calculate multi-factors with Hikyuu MF: {e}")
+            if env_manager.is_mock_data_allowed():
+                return self._get_mock_multi_factors(stock_codes, start_date, end_date, factor_list)
+            raise
+
+    def _calculate_factor_with_mf(self, stock: Stock, query: KQuery, factor_name: str):
+        """使用Hikyuu MF计算具体因子"""
+        try:
+            # 获取基本数据
+            close_data = CLOSE(stock, query)
+            open_data = OPEN(stock, query)
+            high_data = HIGH(stock, query)
+            low_data = LOW(stock, query)
+            vol_data = VOL(stock, query)
+
+            # 根据因子名称计算
+            if factor_name == 'momentum_20d':
+                # 20日动量因子
+                ma20 = MA(close_data, 20)
+                return (close_data / ma20 - 1).to_np()
+
+            elif factor_name == 'rsi_14d':
+                # RSI因子
+                rsi_values = RSI(close_data, 14)
+                return rsi_values.to_np()
+
+            elif factor_name == 'volatility_20d':
+                # 20日波动率
+                returns = close_data.pct_change()
+                volatility = returns.rolling(20).std() * np.sqrt(252)
+                return volatility.to_np() if hasattr(volatility, 'to_np') else np.array(volatility)
+
+            elif factor_name == 'macd_signal':
+                # MACD信号
+                macd_result = MACD(close_data)
+                return macd_result.to_np() if hasattr(macd_result, 'to_np') else np.array(macd_result)
+
+            elif factor_name == 'bollinger_position':
+                # 布林带位置
+                boll_result = BOLL(close_data, 20, 2)
+                # 返回价格在布林带中的位置
+                upper = boll_result.upper
+                lower = boll_result.lower
+                position = (close_data - lower) / (upper - lower)
+                return position.to_np() if hasattr(position, 'to_np') else np.array(position)
+
+            elif factor_name == 'volume_ratio':
+                # 成交量比率
+                vol_ma = MA(vol_data, 20)
+                vol_ratio = vol_data / vol_ma
+                return vol_ratio.to_np() if hasattr(vol_ratio, 'to_np') else np.array(vol_ratio)
+
+            else:
+                # 默认返回空数组
+                return np.full(len(close_data), np.nan)
+
+        except Exception as e:
+            logging.error(f"MF factor calculation failed for {factor_name}: {e}")
+            return np.array([])
 
     def _execute_factor_formula(self, formula: str, stock: Stock, start_date: date, end_date: date) -> pd.DataFrame:
         """执行因子计算公式"""
@@ -364,27 +515,55 @@ class HikyuuDataInterface:
 
         return pd.DataFrame(data)
 
-    def _get_mock_factor_data(self, formula: str, stock_code: str, start_date: date, end_date: date) -> pd.DataFrame:
-        """获取模拟因子数据"""
-        warn_mock_data(f"Using mock factor data for {formula}")
+    def _get_mock_financial_data(self, stock_code: str, start_date: date, end_date: date) -> pd.DataFrame:
+        """获取模拟财务数据"""
+        warn_mock_data(f"Using mock financial data for {stock_code}")
 
-        import numpy as np
-
-        # 生成日期范围
         dates = pd.date_range(start=start_date, end=end_date, freq='D')
-        dates = [d.date() for d in dates]
-
         data = []
+
+        np.random.seed(hash(stock_code) % 2**32)
         for trade_date in dates:
             data.append({
+                'date': trade_date.date(),
                 'stock_code': stock_code,
-                'trade_date': trade_date,
-                'factor_value': Decimal(str(round(np.random.normal(0, 0.1), 6))),
-                'factor_score': Decimal(str(round(np.random.uniform(0, 1), 6))),
-                'percentile_rank': Decimal(str(round(np.random.uniform(0, 1), 4)))
+                'eps': round(np.random.uniform(0.5, 2.0), 4),
+                'bvps': round(np.random.uniform(3.0, 8.0), 4),
+                'roe': round(np.random.uniform(0.05, 0.25), 4),
+                'roa': round(np.random.uniform(0.02, 0.15), 4),
+                'pe': round(np.random.uniform(8.0, 50.0), 2),
+                'pb': round(np.random.uniform(0.8, 5.0), 2),
+                'total_revenue': round(np.random.uniform(1e8, 1e10), 0),
+                'net_profit': round(np.random.uniform(1e7, 1e9), 0),
+                'total_assets': round(np.random.uniform(1e9, 1e11), 0),
+                'total_equity': round(np.random.uniform(1e8, 1e10), 0)
             })
 
         return pd.DataFrame(data)
+
+    def _get_mock_multi_factors(self, stock_codes: List[str], start_date: date, end_date: date,
+                               factor_list: List[str]) -> Dict[str, pd.DataFrame]:
+        """获取模拟多因子数据"""
+        warn_mock_data(f"Using mock multi-factor data for {len(stock_codes)} stocks, {len(factor_list)} factors")
+
+        results = {}
+        dates = pd.date_range(start=start_date, end=end_date, freq='D')
+
+        for factor_name in factor_list:
+            factor_data = []
+            for stock_code in stock_codes:
+                np.random.seed(hash(stock_code + factor_name) % 2**32)
+                for trade_date in dates:
+                    factor_data.append({
+                        'stock_code': stock_code,
+                        'trade_date': trade_date.date(),
+                        'factor_value': round(np.random.normal(0, 0.1), 6),
+                        'factor_score': round(np.random.uniform(0, 1), 6),
+                        'percentile_rank': round(np.random.uniform(0, 1), 4)
+                    })
+            results[factor_name] = pd.DataFrame(factor_data)
+
+        return results
 
 
 # 全局Hikyuu接口实例

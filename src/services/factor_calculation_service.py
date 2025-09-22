@@ -672,11 +672,33 @@ class FactorCalculator:
                 data['high'] = data['high_price']
                 data['low'] = data['low_price']
 
-                # 模拟财务数据（实际中应该从财务数据库获取）
-                np.random.seed(hash(stock_code) % 2**32)
-                data['eps'] = 1.0 + np.random.randn(len(data)) * 0.1
-                data['bvps'] = 5.0 + np.random.randn(len(data)) * 0.5
-                data['net_income'] = data['eps'] * 1000000  # 模拟净利润
+                # 使用Hikyuu FINANCE功能获取财务数据
+                financial_data = hikyuu_interface.get_financial_data(
+                    stock_code,
+                    request.start_date,
+                    request.end_date
+                )
+
+                # 合并财务数据
+                if not financial_data.empty:
+                    financial_data['date'] = financial_data['date']
+                    data = data.merge(
+                        financial_data[['date', 'eps', 'bvps', 'roe', 'roa', 'pe', 'pb',
+                                       'total_revenue', 'net_profit', 'total_assets', 'total_equity']],
+                        on='date',
+                        how='left'
+                    )
+                    self.logger.info(f"成功获取{stock_code}的财务数据")
+                else:
+                    # 如果没有财务数据，使用模拟数据
+                    self.logger.warning(f"{stock_code}没有获取到财务数据，使用模拟数据")
+                    np.random.seed(hash(stock_code) % 2**32)
+                    data['eps'] = 1.0 + np.random.randn(len(data)) * 0.1
+                    data['bvps'] = 5.0 + np.random.randn(len(data)) * 0.5
+                    data['roe'] = 0.15 + np.random.randn(len(data)) * 0.05
+                    data['roa'] = 0.08 + np.random.randn(len(data)) * 0.03
+                    data['pe'] = 20.0 + np.random.randn(len(data)) * 5.0
+                    data['pb'] = 2.0 + np.random.randn(len(data)) * 0.5
                 data['shareholders_equity'] = data['bvps'] * 1000000  # 模拟股东权益
 
                 # 优化数据格式以提升性能
@@ -1049,8 +1071,122 @@ class FactorCalculationService:
         self.factor_storage = FactorStorage(self.config.get('storage', {}))
         self.query_engine = FactorQueryEngine(self.factor_storage)
 
-        # 服务配置
-        self.enable_audit = self.config.get('enable_audit', True)
+    async def calculate_multi_factors_with_mf(
+        self,
+        stock_codes: List[str],
+        factor_names: List[str],
+        start_date: date,
+        end_date: date,
+        user_id: str = "system"
+    ) -> Dict[str, Any]:
+        """
+        使用Hikyuu MF功能批量计算多个因子
+        这是高效的批量计算方法，利用Hikyuu的C++性能优势
+        """
+        start_time = datetime.now()
+        self.logger.info(
+            f"开始使用Hikyuu MF批量计算因子: "
+            f"{len(stock_codes)}只股票, {len(factor_names)}个因子"
+        )
+
+        result = {
+            'success': True,
+            'calculation_id': f"mf_batch_{datetime.now().strftime('%Y%m%d_%H%M%S')}",
+            'factor_results': {},
+            'total_stocks': len(stock_codes),
+            'total_factors': len(factor_names),
+            'execution_time_seconds': 0,
+            'performance_metrics': {},
+            'errors': []
+        }
+
+        try:
+            # 使用Hikyuu MF功能批量计算
+            mf_results = hikyuu_interface.calculate_multi_factors(
+                stock_codes, start_date, end_date, factor_names
+            )
+
+            if mf_results:
+                result['factor_results'] = mf_results
+
+                # 计算成功统计
+                total_records = 0
+                successful_records = 0
+
+                for factor_name, factor_df in mf_results.items():
+                    if not factor_df.empty:
+                        total_records += len(factor_df)
+                        successful_records += len(factor_df[factor_df['factor_value'].notna()])
+
+                result['performance_metrics'] = {
+                    'total_records': total_records,
+                    'successful_records': successful_records,
+                    'success_rate': successful_records / total_records if total_records > 0 else 0,
+                    'records_per_second': total_records / max(1, (datetime.now() - start_time).total_seconds()),
+                    'using_hikyuu_mf': True,
+                    'calculation_method': 'hikyuu_multi_factor'
+                }
+
+                # 存储结果
+                if self.config.get('auto_store_results', True):
+                    await self._store_mf_results(mf_results, result['calculation_id'])
+
+                self.logger.info(
+                    f"Hikyuu MF批量计算成功: 总记录{total_records}, "
+                    f"成功{successful_records}, 成功率{result['performance_metrics']['success_rate']:.2%}"
+                )
+            else:
+                result['success'] = False
+                result['errors'].append("Hikyuu MF calculation returned empty results")
+
+        except Exception as e:
+            self.logger.error(f"Hikyuu MF批量计算失败: {e}")
+            result['success'] = False
+            result['errors'].append(str(e))
+
+        finally:
+            end_time = datetime.now()
+            result['execution_time_seconds'] = (end_time - start_time).total_seconds()
+
+        return result
+
+    async def _store_mf_results(
+        self,
+        mf_results: Dict[str, pd.DataFrame],
+        calculation_id: str
+    ) -> bool:
+        """存储Hikyuu MF批量计算结果"""
+        try:
+            for factor_name, factor_df in mf_results.items():
+                if not factor_df.empty:
+                    # 转换为存储格式
+                    values_list = []
+                    for _, row in factor_df.iterrows():
+                        if pd.notna(row['factor_value']):
+                            values_list.append({
+                                'factor_id': factor_name,
+                                'stock_code': row['stock_code'],
+                                'trade_date': row['trade_date'],
+                                'factor_value': row['factor_value'],
+                                'factor_score': row.get('factor_score'),
+                                'percentile_rank': row.get('percentile_rank'),
+                                'calculation_id': calculation_id,
+                                'data_version': '1.0',
+                                'calculation_method': 'hikyuu_mf'
+                            })
+
+                    if values_list:
+                        success = self.factor_storage.factor_repo.save_factor_values_batch(values_list)
+                        if success:
+                            self.logger.info(f"成功存储{factor_name}因子数据: {len(values_list)}条记录")
+                        else:
+                            self.logger.error(f"存储{factor_name}因子数据失败")
+                            return False
+
+            return True
+        except Exception as e:
+            self.logger.error(f"存储Hikyuu MF结果失败: {e}")
+            return False
 
     async def execute_factor_lifecycle(
         self,

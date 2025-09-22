@@ -8,6 +8,12 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from typing import Dict, Any, List, Optional
 from datetime import datetime, date
 from pydantic import BaseModel
+import sys
+import os
+
+# 添加项目根目录到路径
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', '..', '..'))
+from lib.environment import env_manager, warn_mock_data
 
 router = APIRouter()
 
@@ -37,8 +43,18 @@ async def list_factors(
 ) -> Dict[str, Any]:
     """获取因子列表"""
 
-    # 模拟因子数据
-    factors = [
+    if not env_manager.is_mock_data_allowed():
+        # 非开发环境必须使用真实数据
+        raise NotImplementedError(
+            env_manager.get_real_data_requirement_message() +
+            " Factor service integration required."
+        )
+
+    # 开发环境Mock数据警告
+    warn_mock_data("Factors API endpoint using mock data")
+
+    # MOCK DATA - 开发环境模拟因子数据
+    factors = [  # MOCK DATA
         {
             "factor_id": "momentum_20d",
             "name": "20日动量因子",
@@ -66,7 +82,7 @@ async def list_factors(
             "created_at": "2024-01-01T00:00:00",
             "status": "active"
         }
-    ]
+    ]  # MOCK DATA
 
     # 应用筛选
     if category:
@@ -80,6 +96,7 @@ async def list_factors(
     factors = factors[offset:offset + limit]
 
     return {
+        "data_type": "mock",  # MOCK DATA标识
         "factors": factors,
         "pagination": {
             "total": total,
@@ -113,9 +130,18 @@ async def create_factor(request: FactorCreateRequest) -> Dict[str, Any]:
 async def get_factor(factor_id: str) -> Dict[str, Any]:
     """获取指定因子的详细信息"""
 
-    # 模拟因子详情数据
-    if factor_id == "momentum_20d":
+    if not env_manager.is_mock_data_allowed():
+        raise NotImplementedError(
+            env_manager.get_real_data_requirement_message() +
+            " Factor detail service integration required."
+        )
+
+    warn_mock_data(f"Factor detail API for {factor_id} using mock data")
+
+    # MOCK DATA - 开发环境模拟因子详情数据
+    if factor_id == "momentum_20d":  # MOCK DATA
         return {
+            "data_type": "mock",  # MOCK DATA标识
             "factor_id": factor_id,
             "name": "20日动量因子",
             "category": "momentum",
@@ -125,7 +151,7 @@ async def get_factor(factor_id: str) -> Dict[str, Any]:
             "created_at": "2024-01-01T00:00:00",
             "updated_at": "2024-01-01T00:00:00",
             "status": "active",
-            "statistics": {
+            "statistics": {  # MOCK DATA
                 "coverage_stocks": 4500,
                 "calculation_frequency": "daily",
                 "last_calculation": datetime.now().isoformat(),

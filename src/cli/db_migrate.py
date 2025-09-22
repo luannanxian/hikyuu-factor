@@ -25,12 +25,21 @@ def migrate(database_url: Optional[str], verbose: bool):
         click.echo("开始数据库迁移")
 
     try:
-        # 这里应该使用实际的数据库迁移逻辑
-        # 当前为模拟实现
-        click.echo("执行数据库schema创建...")
+        from lib.environment import env_manager
 
-        # 模拟创建表
-        tables = [
+        if not env_manager.is_development_only():
+            # 非开发环境需要真实的数据库迁移
+            raise NotImplementedError(
+                env_manager.get_real_data_requirement_message() +
+                " Database migration requires real database connection."
+            )
+
+        # 开发环境提示
+        click.echo("开发环境数据库迁移模拟...")
+        click.echo("Warning: 开发环境模式，实际部署需要真实数据库迁移实现")
+
+        # 开发环境下的模拟表创建（仅用于开发调试）
+        tables = [  # MOCK DATA - 开发环境模拟
             'stocks',
             'market_data',
             'factors',
@@ -42,10 +51,10 @@ def migrate(database_url: Optional[str], verbose: bool):
 
         for table in tables:
             if verbose:
-                click.echo(f"创建表: {table}")
+                click.echo(f"[DEV] 模拟创建表: {table}")  # MOCK DATA
 
-        click.echo("数据库迁移完成")
-        click.echo("注意: 当前为演示模式，实际需要连接数据库")
+        click.echo("开发环境模拟迁移完成")
+        click.echo("注意: 生产环境需要实现真实的数据库迁移逻辑")
 
     except Exception as e:
         click.echo(f"Error: 数据库迁移失败: {e}", err=True)

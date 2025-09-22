@@ -43,8 +43,8 @@ def generate(strategy: str, stocks: Optional[str], confirm: bool,
         # 初始化信号生成服务
         service = SignalGenerationService()
 
-        # 模拟因子数据 (实际应该从因子计算服务获取)
-        mock_factor_data = _create_mock_factor_data(stock_list or ["sh000001", "sz000002"])
+        # 获取因子数据 (从因子计算服务)
+        factor_data = _get_factor_data_from_service(stock_list or ["sh000001", "sz000002"])
 
         # 配置参数
         signal_config = {
@@ -79,7 +79,7 @@ def generate(strategy: str, stocks: Optional[str], confirm: bool,
 
         # 生成信号
         results = service.generate_trading_signals(
-            factor_data=mock_factor_data,
+            factor_data=factor_data,
             signal_config=signal_config,
             risk_config=risk_config,
             user_id="cli_user",
@@ -139,12 +139,44 @@ def generate(strategy: str, stocks: Optional[str], confirm: bool,
         sys.exit(1)
 
 
-def _create_mock_factor_data(stock_list: List[str]) -> Dict[str, Any]:
-    """创建模拟因子数据"""
+def _get_factor_data_from_service(stock_list: List[str]) -> Dict[str, Any]:
+    """从因子计算服务获取真实因子数据"""
+    import sys
+    import os
+
+    # 添加项目根目录到路径
+    sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
+
+    from lib.environment import env_manager
+    from services.factor_calculation_service import FactorCalculationService
+
+    # 环境检查
+    if not env_manager.is_mock_data_allowed():
+        # 非开发环境，必须使用真实数据
+        service = FactorCalculationService()
+        factors = ['momentum_20d', 'rsi_14d', 'pe_ratio']
+
+        # 调用真实的因子计算服务
+        # 注意: 这里需要实现真实的因子数据获取逻辑
+        raise NotImplementedError(
+            env_manager.get_real_data_requirement_message() +
+            " Factor calculation service integration required."
+        )
+    else:
+        # 开发环境，允许使用模拟数据（但需要明确标注）
+        return _development_only_mock_factor_data(stock_list)
+
+
+def _development_only_mock_factor_data(stock_list: List[str]) -> Dict[str, Any]:
+    """开发环境专用的模拟因子数据 - 仅用于开发调试"""
     import pandas as pd
     import numpy as np
+    from lib.environment import warn_mock_data
 
-    mock_data = {}
+    # MOCK DATA WARNING
+    warn_mock_data("Signal generation CLI using mock factor data")
+
+    mock_data = {}  # MOCK DATA
     factors = ['momentum_20d', 'rsi_14d', 'pe_ratio']
 
     for factor in factors:
@@ -153,12 +185,12 @@ def _create_mock_factor_data(stock_list: List[str]) -> Dict[str, Any]:
             data.append({
                 'stock_code': stock,
                 'date': datetime.now().date(),
-                'factor_value': np.random.random(),
-                'factor_score': np.random.random()
+                'factor_value': np.random.random(),  # MOCK DATA
+                'factor_score': np.random.random()   # MOCK DATA
             })
-        mock_data[factor] = pd.DataFrame(data)
+        mock_data[factor] = pd.DataFrame(data)  # MOCK DATA
 
-    return mock_data
+    return mock_data  # MOCK DATA
 
 
 @click.command()

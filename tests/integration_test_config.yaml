@@ -1,0 +1,233 @@
+# Hikyuu Factor 集成测试配置文件
+# 配置版本: 1.0
+# 最后更新: 2025-09-22
+
+# 数据库配置
+database:
+  host: "192.168.3.46"
+  port: 3306
+  user: "remote"
+  password: "remote123456"
+  database: "hikyuu_factor_test"
+  charset: "utf8mb4"
+  collation: "utf8mb4_unicode_ci"
+  pool_size: 10
+  max_overflow: 20
+  pool_pre_ping: true
+  pool_recycle: 3600
+  echo: false
+
+# Agent通信配置
+communication:
+  timeout: 30
+  retry_attempts: 3
+  heartbeat_interval: 5
+  message_queue_size: 1000
+
+# Agent配置
+agents:
+  data_manager:
+    port: 8001
+    max_concurrent_tasks: 50
+    memory_limit: 512  # MB
+
+  factor_calculator:
+    port: 8002
+    max_concurrent_tasks: 100
+    memory_limit: 1024  # MB
+
+  validator:
+    port: 8003
+    max_concurrent_tasks: 30
+    memory_limit: 256  # MB
+
+  signal_generator:
+    port: 8004
+    max_concurrent_tasks: 20
+    memory_limit: 256  # MB
+
+# 性能配置
+performance:
+  target_throughput: 1000
+  max_response_time: 5.0
+  max_memory_usage: 1000
+  min_cpu_efficiency: 0.7
+  max_concurrent_connections: 100
+
+# 性能基准
+benchmarks:
+  factor_calculation:
+    duration: 5.0
+    memory_delta: 100
+    avg_cpu: 50.0
+
+  data_processing:
+    duration: 2.0
+    memory_delta: 50
+    avg_cpu: 30.0
+
+  agent_response:
+    duration: 1.0
+    memory_delta: 10
+    avg_cpu: 20.0
+
+# Hikyuu框架配置
+hikyuu:
+  data_path: "/tmp/hikyuu_test_data"
+  block_path: "/tmp/hikyuu_test_blocks"
+  version: "2.6.8"
+  cache_size: 512
+
+# 计算配置
+hikyuu_calculation:
+  parallel_workers: 4
+  chunk_size: 1000
+  memory_limit: 2048
+  timeout: 300
+
+# 测试数据配置
+test_data:
+  small_stock_list:
+    - "sh600000"
+    - "sh600001"
+    - "sz000001"
+    - "sz000002"
+
+  medium_stock_count: 100
+  large_stock_count: 1000
+
+# 测试时间段
+test_periods:
+  short_term:
+    start_date: "2024-01-01"
+    end_date: "2024-01-31"
+
+  medium_term:
+    start_date: "2024-01-01"
+    end_date: "2024-06-30"
+
+  long_term:
+    start_date: "2024-01-01"
+    end_date: "2024-12-31"
+
+# 因子配置
+factor_types:
+  momentum:
+    - "momentum_5d"
+    - "momentum_10d"
+    - "momentum_20d"
+
+  technical:
+    - "rsi_14d"
+    - "macd"
+    - "bollinger_bands"
+
+  valuation:
+    - "pe_ratio"
+    - "pb_ratio"
+    - "ps_ratio"
+
+  quality:
+    - "roe"
+    - "roa"
+    - "debt_ratio"
+
+# 因子计算参数
+factor_params:
+  momentum:
+    periods: [5, 10, 20, 60]
+    method: "simple"
+
+  technical:
+    rsi_period: 14
+    macd_fast: 12
+    macd_slow: 26
+    macd_signal: 9
+    bollinger_period: 20
+    bollinger_std: 2
+
+  valuation:
+    ttm: true
+    quarterly: false
+
+# 验证规则
+validation_rules:
+  missing_value_threshold: 0.05
+  outlier_std_threshold: 3.0
+  correlation_threshold: 0.95
+  stability_period: 20
+  ic_threshold: 0.02
+
+# 质量评分权重
+quality_weights:
+  completeness: 0.3
+  consistency: 0.25
+  accuracy: 0.25
+  timeliness: 0.2
+
+# 策略配置
+strategies:
+  momentum_strategy:
+    lookback_period: 20
+    threshold: 0.02
+
+  value_strategy:
+    pe_threshold: 15
+    pb_threshold: 1.5
+
+  multi_factor_strategy:
+    factor_weights:
+      momentum: 0.4
+      value: 0.3
+      quality: 0.3
+
+# 风险控制
+risk_controls:
+  max_position_size: 0.1
+  sector_limit: 0.3
+  stop_loss: 0.05
+  max_drawdown: 0.15
+  position_limit: 50
+
+# 测试分类
+test_categories:
+  unit:
+    timeout: 5
+    max_memory: 100
+
+  integration:
+    timeout: 30
+    max_memory: 500
+
+  performance:
+    timeout: 300
+    max_memory: 1000
+
+  end_to_end:
+    timeout: 600
+    max_memory: 2000
+
+# 日志配置
+logging:
+  level: "INFO"
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+
+  loggers:
+    agents: "DEBUG"
+    services: "INFO"
+    database: "WARNING"
+    performance: "INFO"
+
+# 监控配置
+monitoring:
+  cpu_alert_threshold: 80
+  memory_alert_threshold: 80
+  disk_alert_threshold: 90
+  network_timeout: 30
+
+# 业务监控
+business_monitoring:
+  agent_health_check_interval: 10
+  database_connection_check: 5
+  factor_calculation_timeout: 300
+  signal_generation_timeout: 60

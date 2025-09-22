@@ -45,6 +45,7 @@ from models.audit_models import AuditEntry, AuditEventType
 from data.repository import factor_repository, stock_repository
 from data.hikyuu_interface import hikyuu_interface
 from lib.environment import env_manager, warn_mock_data
+from lib.performance import platform_optimizer, calculation_optimizer, performance_optimized
 
 
 class PlatformOptimizer:
@@ -441,11 +442,15 @@ class FactorCalculator:
     执行高性能的因子计算，支持批量和增量计算。
     """
 
-    def __init__(self, registry: FactorRegistry, optimizer: PlatformOptimizer):
+    def __init__(self, registry: FactorRegistry, optimizer: Optional[PlatformOptimizer] = None):
         self.registry = registry
-        self.optimizer = optimizer
+        self.optimizer = optimizer or platform_optimizer
         self.logger = logging.getLogger(__name__)
 
+        # 使用全局计算优化器
+        self.calculation_optimizer = calculation_optimizer
+
+    @performance_optimized
     async def calculate_factor(
         self,
         request: FactorCalculationRequest
@@ -457,6 +462,24 @@ class FactorCalculator:
         """
         start_time = datetime.now()
         self.logger.info(f"开始计算因子: {request.factor_name}, 股票数: {len(request.stock_codes)}")
+
+        # 性能估算和优化策略
+        estimate = self.calculation_optimizer.estimate_calculation_time(
+            len(request.stock_codes), 1  # 单个因子
+        )
+        strategy = self.calculation_optimizer.optimize_calculation_strategy(
+            len(request.stock_codes), 1
+        )
+
+        self.logger.info(
+            f"性能估算: 预计{estimate['estimated_minutes']:.1f}分钟, "
+            f"满足目标: {estimate['meets_target']}, "
+            f"工作进程: {strategy['worker_count']}, "
+            f"批次大小: {strategy['chunk_size']}"
+        )
+
+        # 应用优化策略
+        request.chunk_size = strategy['chunk_size']
 
         # 获取因子定义
         factor_def = self.registry.get_factor_definition(request.factor_name)
@@ -478,7 +501,7 @@ class FactorCalculator:
 
         try:
             # 确定计算策略
-            if len(request.stock_codes) > 100:
+            if strategy['use_parallel'] and len(request.stock_codes) > 100:
                 # 大批量并行计算
                 factor_data = await self._parallel_calculate(request, factor_def)
             else:
@@ -520,8 +543,9 @@ class FactorCalculator:
             for i in range(0, len(request.stock_codes), batch_size)
         ]
 
-        # 获取最优工作进程数
-        max_workers = self.optimizer.get_optimal_worker_count(len(request.stock_codes))
+        # 获取最优工作进程数（使用优化器）
+        max_workers = strategy['worker_count']
+        batch_size = strategy['chunk_size']
 
         all_factor_data = []
 
@@ -653,6 +677,10 @@ class FactorCalculator:
                 data['eps'] = 1.0 + np.random.randn(len(data)) * 0.1
                 data['bvps'] = 5.0 + np.random.randn(len(data)) * 0.5
                 data['net_income'] = data['eps'] * 1000000  # 模拟净利润
+                data['shareholders_equity'] = data['bvps'] * 1000000  # 模拟股东权益
+
+                # 优化数据格式以提升性能
+                data = platform_optimizer.optimize_dataframe(data)
                 data['shareholders_equity'] = data['bvps'] * 1000000  # 模拟股东权益
 
                 return data

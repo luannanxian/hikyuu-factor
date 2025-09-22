@@ -133,12 +133,7 @@ paths:
               required:
                 - stock_universe
                 - date_range
-                stock_codes:
-                  type: array
-                  items:
-                    type: string
-                  description: Hikyuu股票代码列表
-                query_config:
+            query_config:
                   type: object
                   properties:
                     start_date:

@@ -1,0 +1,44 @@
+# Python类型检查配置文件 for VSCode standard mode
+# 在项目根目录的 pyrightconfig.json
+
+{
+    "include": [
+        "src"
+    ],
+    "exclude": [
+        "**/node_modules",
+        "**/__pycache__",
+        "**/.*"
+    ],
+    "ignore": [
+        "src/**/*_test.py",
+        "tests"
+    ],
+    "defineConstant": {
+        "DEBUG": true
+    },
+    "stubPath": "./typings",
+    "reportMissingImports": "none",
+    "reportMissingTypeStubs": false,
+    "reportOptionalMemberAccess": "warning",
+    "reportOptionalSubscript": "warning",
+    "reportPrivateImportUsage": "warning",
+    "reportUnknownArgumentType": "warning",
+    "reportUnknownLambdaType": "warning",
+    "reportUnknownMemberType": "warning",
+    "reportUnknownParameterType": "warning",
+    "reportUnknownVariableType": "warning",
+    "reportUnnecessaryCast": "warning",
+    "reportUnnecessaryComparison": "warning",
+    "reportUnnecessaryContains": "warning",
+    "reportAssertAlwaysTrue": "warning",
+    "reportSelfClsParameterName": "warning",
+    "reportImplicitStringConcatenation": "none",
+    "pythonVersion": "3.12",
+    "pythonPlatform": "Darwin",
+    "executionEnvironments": [
+        {
+            "root": "src"
+        }
+    ]
+}

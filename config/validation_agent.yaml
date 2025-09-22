@@ -1,0 +1,113 @@
+# Validation Agent Configuration
+# 验证Agent配置文件
+
+agent:
+  name: "validation"
+  type: "validation"
+  host: "0.0.0.0"
+  port: 8003
+  debug: false
+  enable_audit: true
+
+# 验证配置
+validation:
+  # 因子验证配置
+  factor_validation:
+    statistical_tests:
+      normality_test:
+        enabled: true
+        p_value_threshold: 0.05
+      stationarity_test:
+        enabled: true
+        method: "adf"  # adf, kpss
+      autocorrelation_test:
+        enabled: true
+        max_lags: 20
+
+    # IC分析配置
+    ic_analysis:
+      periods: [1, 5, 10, 20]  # 前瞻期
+      method: "spearman"  # pearson, spearman
+      decay_rate: 0.5
+
+    # 分层回测配置
+    layered_backtest:
+      layers: 10
+      rebalance_frequency: "monthly"  # daily, weekly, monthly
+      transaction_cost: 0.003  # 0.3%
+      benchmark: "sh000300"
+
+  # 风险评估配置
+  risk_assessment:
+    var_calculation:
+      confidence_level: 0.05
+      lookback_period: 252
+      method: "historical"  # historical, parametric, monte_carlo
+
+    # 风险因子
+    risk_factors:
+      market_risk:
+        enabled: true
+        beta_threshold: [0.5, 2.0]
+      sector_risk:
+        enabled: true
+        max_concentration: 0.3
+      liquidity_risk:
+        enabled: true
+        min_volume_threshold: 1000000
+
+  # 绩效评估配置
+  performance_analysis:
+    metrics:
+      - "sharpe_ratio"
+      - "information_ratio"
+      - "max_drawdown"
+      - "calmar_ratio"
+      - "sortino_ratio"
+
+    benchmark_comparison:
+      enabled: true
+      benchmarks:
+        - "sh000300"
+        - "sz399905"
+        - "sh000905"
+
+  # 报告生成配置
+  reporting:
+    formats: ["pdf", "html", "json"]
+    template_dir: "./templates"
+    output_dir: "./reports"
+
+# 数据源配置
+data_source:
+  factor_data:
+    path: "./data/factors"
+    format: "hdf5"
+  market_data:
+    source: "hikyuu"
+    data_dir: "./data/hikyuu"
+
+# 数据库配置
+database:
+  url: "${DATABASE_URL}"
+  pool_size: 10
+
+# Redis缓存配置
+redis:
+  url: "${REDIS_URL}"
+  db: 2
+  ttl: 1800
+
+# 日志配置
+logging:
+  level: "INFO"
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  file: "./logs/validation.log"
+  max_size: "10MB"
+  backup_count: 5
+
+# 监控配置
+monitoring:
+  prometheus:
+    enabled: true
+    port: 9003

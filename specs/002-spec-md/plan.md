@@ -35,7 +35,7 @@
 
 ## Technical Context
 **Language/Version**: Python 3.11+ (ARM NEON优化支持Apple Silicon)
-**Primary Dependencies**: Hikyuu量化框架(C++核心), FastAPI, SQLAlchemy, Pandas, NumPy, MySQL连接池
+**Primary Dependencies**: Hikyuu量化框架(C++核心)>=2.6.8, FastAPI, SQLAlchemy, Pandas, NumPy, MySQL连接池
 **Storage**: MySQL 8.0+ (Hikyuu原生数据结构), HDF5内存映射, Redis (因子缓存), 文件系统 (审计日志)
 **Testing**: pytest, pytest-asyncio, pytest-mock (TDD强制要求)
 **Target Platform**: macOS (Apple Silicon ARM优化), Linux (生产环境), Docker容器化部署

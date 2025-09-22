@@ -1,0 +1,352 @@
+openapi: 3.0.3
+info:
+  title: Factor Calculation Agent API
+  description: 因子计算Agent API - 基于Hikyuu指标库的高性能因子计算服务
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:8082
+    description: Factor Calculation Agent服务器
+
+paths:
+  # FR-008: 时间序列因子计算
+  /api/factor/timeseries:
+    post:
+      summary: 计算时间序列因子
+      description: 使用Hikyuu指标库计算时间序列因子，支持单股票或股票池
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                factor_id:
+                  type: string
+                  example: "momentum_20d"
+                stock_codes:
+                  type: array
+                  items:
+                    type: string
+                  example: ["sh000001", "sz000002"]
+                date_range:
+                  $ref: '#/components/schemas/DateRange'
+                parameters:
+                  type: object
+                  description: 因子计算参数
+                  example: {"period": 20, "smooth": false}
+      responses:
+        '200':
+          description: 成功计算因子
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/FactorValue'
+                  performance_metrics:
+                    $ref: '#/components/schemas/CalculationMetrics'
+
+  # FR-008: 横截面因子计算
+  /api/factor/cross-section:
+    post:
+      summary: 计算横截面因子
+      description: 计算指定日期所有股票的因子值，支持行业分类
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                factor_id:
+                  type: string
+                date:
+                  type: string
+                  format: date
+                stock_universe:
+                  type: array
+                  items:
+                    type: string
+                industry_classification:
+                  type: string
+                  enum: [sw, zjh, wind]
+                  default: sw
+                rank_method:
+                  type: string
+                  enum: [percentile, zscore, minmax]
+                  default: percentile
+      responses:
+        '200':
+          description: 成功计算横截面因子
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/CrossSectionFactorValue'
+
+  # FR-013: 自定义因子注册
+  /api/factor/register:
+    post:
+      summary: 注册自定义因子
+      description: 向因子库注册新的自定义因子定义
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FactorDefinition'
+      responses:
+        '201':
+          description: 因子注册成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  factor_id:
+                    type: string
+                  version:
+                    type: string
+
+  # FR-011: 因子版本管理
+  /api/factor/versions/{factor_id}:
+    get:
+      summary: 获取因子版本历史
+      description: 获取指定因子的所有版本信息
+      parameters:
+        - name: factor_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 成功返回版本历史
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/FactorVersion'
+
+  # Hikyuu MF多因子批量计算
+  /api/factor/multi-factor:
+    post:
+      summary: 多因子批量计算
+      description: 使用Hikyuu MF功能进行多因子批量计算，提升计算效率
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                factor_list:
+                  type: array
+                  items:
+                    type: string
+                  example: ["momentum_20d", "rsi_14d", "volatility_20d"]
+                stock_codes:
+                  type: array
+                  items:
+                    type: string
+                date_range:
+                  $ref: '#/components/schemas/DateRange'
+                parallel_config:
+                  $ref: '#/components/schemas/ParallelConfig'
+      responses:
+        '200':
+          description: 批量计算完成
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+                    additionalProperties:
+                      type: array
+                      items:
+                        $ref: '#/components/schemas/FactorValue'
+                  performance_metrics:
+                    $ref: '#/components/schemas/BatchCalculationMetrics'
+
+components:
+  schemas:
+    DateRange:
+      type: object
+      properties:
+        start_date:
+          type: string
+          format: date
+        end_date:
+          type: string
+          format: date
+
+    FactorValue:
+      type: object
+      properties:
+        factor_id:
+          type: string
+        stock_code:
+          type: string
+        date:
+          type: string
+          format: date
+        value:
+          type: number
+          format: double
+        normalized_value:
+          type: number
+          format: double
+        percentile_rank:
+          type: number
+          format: double
+          minimum: 0
+          maximum: 1
+
+    CrossSectionFactorValue:
+      type: object
+      properties:
+        factor_id:
+          type: string
+        date:
+          type: string
+          format: date
+        stock_code:
+          type: string
+        value:
+          type: number
+        rank:
+          type: integer
+        percentile:
+          type: number
+        industry:
+          type: string
+        industry_rank:
+          type: integer
+
+    FactorDefinition:
+      type: object
+      required:
+        - id
+        - name
+        - category
+        - hikyuu_formula
+        - economic_logic
+      properties:
+        id:
+          type: string
+          pattern: '^[a-z][a-z0-9_]*$'
+          example: "momentum_20d"
+        name:
+          type: string
+          example: "20日动量因子"
+        category:
+          type: string
+          enum: [momentum, value, quality, growth, risk, technical]
+        hikyuu_formula:
+          type: string
+          description: 基于Hikyuu指标的计算公式
+          example: "MA(CLOSE(), 20) / MA(CLOSE(), 5) - 1"
+        economic_logic:
+          type: string
+          description: 因子的经济逻辑解释
+        parameters:
+          type: object
+          description: 因子参数配置
+        hikyuu_dependencies:
+          type: array
+          items:
+            type: string
+          description: 依赖的Hikyuu指标
+          example: ["MA", "CLOSE"]
+
+    FactorVersion:
+      type: object
+      properties:
+        version:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        created_by:
+          type: string
+        changes:
+          type: string
+        status:
+          type: string
+          enum: [active, deprecated, testing]
+
+    CalculationMetrics:
+      type: object
+      properties:
+        total_calculations:
+          type: integer
+        successful_calculations:
+          type: integer
+        failed_calculations:
+          type: integer
+        calculation_time_seconds:
+          type: number
+        hikyuu_optimization_used:
+          type: boolean
+        platform_type:
+          type: string
+          enum: [apple_silicon, x86_64, arm64_linux, generic]
+
+    BatchCalculationMetrics:
+      type: object
+      properties:
+        total_factors:
+          type: integer
+        total_stocks:
+          type: integer
+        total_records:
+          type: integer
+        calculation_time_seconds:
+          type: number
+        records_per_second:
+          type: number
+        mf_acceleration_ratio:
+          type: number
+          description: MF功能相对串行计算的加速比
+        memory_usage_mb:
+          type: number
+
+    ParallelConfig:
+      type: object
+      properties:
+        auto_detect_platform:
+          type: boolean
+          default: true
+        max_processes:
+          type: integer
+          minimum: 1
+          maximum: 32
+        memory_limit_mb:
+          type: integer
+        use_hikyuu_mf:
+          type: boolean
+          default: true

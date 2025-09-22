@@ -1,0 +1,467 @@
+openapi: 3.0.3
+info:
+  title: Signal Generation Agent API
+  description: 信号生成Agent API - 基于Hikyuu交易系统的智能信号生成服务
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:8084
+    description: Signal Generation Agent服务器
+
+paths:
+  # FR-003: 强制人工确认的信号生成
+  /api/signal/generate:
+    post:
+      summary: 生成交易信号
+      description: 基于因子和策略生成交易信号，要求强制人工确认
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                strategy_id:
+                  type: string
+                  example: "momentum_strategy_v1"
+                factor_weights:
+                  type: object
+                  additionalProperties:
+                    type: number
+                  example: {"momentum_20d": 0.4, "rsi_14d": 0.3, "volatility_20d": 0.3}
+                universe_filter:
+                  $ref: '#/components/schemas/UniverseFilter'
+                risk_controls:
+                  $ref: '#/components/schemas/RiskControls'
+                require_confirmation:
+                  type: boolean
+                  default: true
+                  description: FR-003要求必须为true
+      responses:
+        '200':
+          description: 信号生成完成，等待人工确认
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/TradingSignal'
+                  confirmation_required:
+                    type: boolean
+                  confirmation_deadline:
+                    type: string
+                    format: date-time
+
+  # FR-003: 人工确认信号
+  /api/signal/confirm:
+    post:
+      summary: 确认交易信号
+      description: 投资经理确认或拒绝生成的交易信号
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                signal_batch_id:
+                  type: string
+                confirmation_action:
+                  type: string
+                  enum: [approve_all, reject_all, approve_selected, modify]
+                selected_signals:
+                  type: array
+                  items:
+                    type: string
+                  description: 选择确认的信号ID列表
+                modifications:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/SignalModification'
+                confirmation_reason:
+                  type: string
+                  description: 确认/拒绝原因
+                user_id:
+                  type: string
+      responses:
+        '200':
+          description: 确认操作完成
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  confirmed_signals:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ConfirmedSignal'
+                  audit_log_id:
+                    type: string
+
+  # FR-004: 可解释信号生成
+  /api/signal/explanation/{signal_id}:
+    get:
+      summary: 获取信号解释
+      description: 获取交易信号的详细因子暴露归因和解释
+      parameters:
+        - name: signal_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 成功返回信号解释
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    $ref: '#/components/schemas/SignalExplanation'
+
+  # FR-012: 快速信号生成
+  /api/signal/daily-update:
+    post:
+      summary: 每日信号更新
+      description: 执行每日信号生成，目标15分钟内完成
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                strategies:
+                  type: array
+                  items:
+                    type: string
+                  description: 要执行的策略列表
+                parallel_execution:
+                  type: boolean
+                  default: true
+                performance_target_minutes:
+                  type: integer
+                  default: 15
+      responses:
+        '200':
+          description: 每日信号更新完成
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  execution_time_minutes:
+                    type: number
+                  signals_generated:
+                    type: integer
+                  performance_met:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/DailySignalBatch'
+
+  # 信号历史查询
+  /api/signal/history:
+    get:
+      summary: 查询信号历史
+      description: 查询历史交易信号记录
+      parameters:
+        - name: start_date
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+        - name: end_date
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+        - name: strategy_id
+          in: query
+          schema:
+            type: string
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pending, confirmed, rejected, expired]
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 100
+      responses:
+        '200':
+          description: 成功返回信号历史
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/HistoricalSignal'
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+
+components:
+  schemas:
+    UniverseFilter:
+      type: object
+      properties:
+        market:
+          type: array
+          items:
+            type: string
+            enum: [sh, sz]
+        min_market_cap:
+          type: number
+          description: 最小市值(亿元)
+        max_market_cap:
+          type: number
+          description: 最大市值(亿元)
+        exclude_st:
+          type: boolean
+          default: true
+        min_trading_days:
+          type: integer
+          default: 60
+        sectors:
+          type: array
+          items:
+            type: string
+          description: 包含的行业
+
+    RiskControls:
+      type: object
+      properties:
+        max_position_weight:
+          type: number
+          default: 0.05
+          description: 单只股票最大权重
+        max_sector_weight:
+          type: number
+          default: 0.3
+          description: 单个行业最大权重
+        max_positions:
+          type: integer
+          default: 50
+          description: 最大持仓数量
+        risk_budget:
+          type: number
+          default: 0.15
+          description: 风险预算
+        factor_exposure_limits:
+          type: object
+          additionalProperties:
+            type: object
+            properties:
+              min:
+                type: number
+              max:
+                type: number
+
+    TradingSignal:
+      type: object
+      properties:
+        signal_id:
+          type: string
+        stock_code:
+          type: string
+        stock_name:
+          type: string
+        signal_date:
+          type: string
+          format: date
+        signal_type:
+          type: string
+          enum: [buy, sell, hold]
+        weight:
+          type: number
+          description: 建议权重
+        confidence:
+          type: number
+          minimum: 0
+          maximum: 1
+          description: 信号置信度
+        factor_contributions:
+          type: object
+          additionalProperties:
+            type: number
+          description: 各因子贡献度
+        risk_score:
+          type: number
+          description: 风险评分
+        confirmation_status:
+          type: string
+          enum: [pending, approved, rejected, modified]
+        expires_at:
+          type: string
+          format: date-time
+
+    SignalModification:
+      type: object
+      properties:
+        signal_id:
+          type: string
+        modified_weight:
+          type: number
+        modification_reason:
+          type: string
+
+    ConfirmedSignal:
+      type: object
+      properties:
+        signal_id:
+          type: string
+        original_signal:
+          $ref: '#/components/schemas/TradingSignal'
+        confirmed_weight:
+          type: number
+        confirmed_by:
+          type: string
+        confirmed_at:
+          type: string
+          format: date-time
+        confirmation_reason:
+          type: string
+        execution_ready:
+          type: boolean
+
+    SignalExplanation:
+      type: object
+      properties:
+        signal_id:
+          type: string
+        stock_info:
+          type: object
+          properties:
+            code:
+              type: string
+            name:
+              type: string
+            sector:
+              type: string
+            market_cap:
+              type: number
+        factor_exposure:
+          type: object
+          additionalProperties:
+            type: object
+            properties:
+              value:
+                type: number
+              percentile:
+                type: number
+              contribution:
+                type: number
+              interpretation:
+                type: string
+        strategy_logic:
+          type: string
+          description: 策略逻辑说明
+        risk_assessment:
+          type: object
+          properties:
+            individual_risk:
+              type: number
+            sector_risk:
+              type: number
+            factor_risk:
+              type: number
+            liquidity_risk:
+              type: number
+        historical_performance:
+          type: object
+          description: 类似信号的历史表现
+
+    DailySignalBatch:
+      type: object
+      properties:
+        batch_id:
+          type: string
+        strategy_id:
+          type: string
+        generation_date:
+          type: string
+          format: date
+        signals:
+          type: array
+          items:
+            $ref: '#/components/schemas/TradingSignal'
+        batch_statistics:
+          type: object
+          properties:
+            total_signals:
+              type: integer
+            buy_signals:
+              type: integer
+            sell_signals:
+              type: integer
+            average_confidence:
+              type: number
+            risk_distribution:
+              type: object
+
+    HistoricalSignal:
+      type: object
+      properties:
+        signal_id:
+          type: string
+        stock_code:
+          type: string
+        signal_date:
+          type: string
+          format: date
+        signal_type:
+          type: string
+        weight:
+          type: number
+        status:
+          type: string
+        performance:
+          type: object
+          properties:
+            return_1d:
+              type: number
+            return_5d:
+              type: number
+            return_20d:
+              type: number
+
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+        limit:
+          type: integer
+        total:
+          type: integer
+        has_next:
+          type: boolean
+        has_prev:
+          type: boolean

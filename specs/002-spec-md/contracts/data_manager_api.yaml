@@ -1,0 +1,331 @@
+openapi: 3.0.3
+info:
+  title: Data Manager Agent API
+  description: 数据管理Agent API - 基于Hikyuu框架的数据访问服务
+  version: 1.0.0
+  contact:
+    name: Hikyuu Factor System
+
+servers:
+  - url: http://localhost:8081
+    description: Data Manager Agent服务器
+
+paths:
+  # FR-001: 股票池管理
+  /api/data/stocks:
+    get:
+      summary: 获取有效股票池
+      description: 获取A股股票池，自动排除ST/*ST股票和上市不足60日的股票
+      parameters:
+        - name: date
+          in: query
+          description: 查询日期
+          required: false
+          schema:
+            type: string
+            format: date
+            example: "2024-01-15"
+        - name: market
+          in: query
+          description: 市场代码过滤 (sh/sz)
+          required: false
+          schema:
+            type: string
+            enum: [sh, sz]
+      responses:
+        '200':
+          description: 成功返回股票池
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/StockInfo'
+                  total_count:
+                    type: integer
+                    example: 4500
+                  filters_applied:
+                    type: array
+                    items:
+                      type: string
+                    example: ["excluded_st_stocks", "excluded_new_listings"]
+
+  # FR-002: K线数据访问 (Point-in-Time)
+  /api/data/kdata:
+    get:
+      summary: 获取K线数据
+      description: 获取股票K线数据，确保Point-in-Time数据访问
+      parameters:
+        - name: stock_code
+          in: query
+          required: true
+          description: 股票代码
+          schema:
+            type: string
+            example: "sh000001"
+        - name: start_date
+          in: query
+          required: true
+          description: 开始日期
+          schema:
+            type: string
+            format: date
+            example: "2024-01-01"
+        - name: end_date
+          in: query
+          required: true
+          description: 结束日期
+          schema:
+            type: string
+            format: date
+            example: "2024-01-31"
+        - name: ktype
+          in: query
+          required: false
+          description: K线类型
+          schema:
+            type: string
+            enum: [DAY, WEEK, MONTH, MIN, MIN5, MIN15, MIN30, MIN60]
+            default: DAY
+      responses:
+        '200':
+          description: 成功返回K线数据
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/KLineRecord'
+                  meta:
+                    $ref: '#/components/schemas/KDataMeta'
+
+  # FR-007: 数据质量检查
+  /api/data/quality-check:
+    post:
+      summary: 执行数据质量检查
+      description: 对指定数据执行质量检查，返回异常报告
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                stock_codes:
+                  type: array
+                  items:
+                    type: string
+                  example: ["sh000001", "sz000002"]
+                date_range:
+                  $ref: '#/components/schemas/DateRange'
+                check_types:
+                  type: array
+                  items:
+                    type: string
+                    enum: [price_consistency, volume_anomaly, gap_analysis]
+                thresholds:
+                  type: object
+                  properties:
+                    max_price_change:
+                      type: number
+                      example: 0.3
+                    min_volume:
+                      type: integer
+                      example: 1000
+      responses:
+        '200':
+          description: 质量检查完成
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    $ref: '#/components/schemas/QualityCheckReport'
+
+  # 财务数据访问 (Point-in-Time)
+  /api/data/financial:
+    get:
+      summary: 获取财务数据
+      description: 获取Point-in-Time财务数据，避免前视偏差
+      parameters:
+        - name: stock_code
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: indicators
+          in: query
+          required: true
+          description: 财务指标列表 (逗号分隔)
+          schema:
+            type: string
+            example: "eps,roe,pe,pb"
+        - name: as_of_date
+          in: query
+          required: true
+          description: 查询时点
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: 成功返回财务数据
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/FinancialRecord'
+
+components:
+  schemas:
+    StockInfo:
+      type: object
+      properties:
+        stock_code:
+          type: string
+          example: "sh000001"
+        stock_name:
+          type: string
+          example: "上证指数"
+        market:
+          type: string
+          enum: [sh, sz]
+        sector:
+          type: string
+          example: "银行"
+        list_date:
+          type: string
+          format: date
+          example: "1990-12-19"
+        status:
+          type: string
+          enum: [active, suspended, delisted]
+        trading_days_since_listing:
+          type: integer
+          example: 8000
+
+    KLineRecord:
+      type: object
+      properties:
+        stock_code:
+          type: string
+          example: "sh000001"
+        datetime:
+          type: string
+          format: date-time
+          example: "2024-01-15T09:30:00Z"
+        open:
+          type: number
+          format: double
+          example: 2950.15
+        high:
+          type: number
+          format: double
+          example: 2980.25
+        low:
+          type: number
+          format: double
+          example: 2945.30
+        close:
+          type: number
+          format: double
+          example: 2975.60
+        volume:
+          type: integer
+          example: 150000000
+        amount:
+          type: number
+          format: double
+          example: 25000000000.50
+
+    KDataMeta:
+      type: object
+      properties:
+        total_records:
+          type: integer
+        start_date:
+          type: string
+          format: date
+        end_date:
+          type: string
+          format: date
+        ktype:
+          type: string
+        pit_validated:
+          type: boolean
+          description: 是否已通过Point-in-Time验证
+
+    DateRange:
+      type: object
+      properties:
+        start_date:
+          type: string
+          format: date
+        end_date:
+          type: string
+          format: date
+
+    QualityCheckReport:
+      type: object
+      properties:
+        checked_stocks:
+          type: integer
+        total_issues:
+          type: integer
+        issues_by_type:
+          type: object
+          additionalProperties:
+            type: integer
+        detailed_issues:
+          type: array
+          items:
+            type: object
+            properties:
+              stock_code:
+                type: string
+              issue_type:
+                type: string
+              description:
+                type: string
+              severity:
+                type: string
+                enum: [low, medium, high, critical]
+
+    FinancialRecord:
+      type: object
+      properties:
+        stock_code:
+          type: string
+        report_date:
+          type: string
+          format: date
+        publication_date:
+          type: string
+          format: date
+        indicators:
+          type: object
+          additionalProperties:
+            type: number
+        pit_compliant:
+          type: boolean
+          description: 是否符合Point-in-Time要求

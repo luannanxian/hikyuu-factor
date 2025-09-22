@@ -1,0 +1,404 @@
+openapi: 3.0.3
+info:
+  title: Validation Agent API
+  description: 验证Agent API - 基于Hikyuu回测引擎的因子验证服务
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:8083
+    description: Validation Agent服务器
+
+paths:
+  # FR-005: 因子样本外验证
+  /api/validation/factor:
+    post:
+      summary: 执行因子验证
+      description: 使用Hikyuu回测引擎执行因子验证，支持可配置的样本划分
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                factor_id:
+                  type: string
+                  example: "momentum_20d"
+                validation_config:
+                  $ref: '#/components/schemas/ValidationConfig'
+                stock_universe:
+                  type: array
+                  items:
+                    type: string
+                backtest_params:
+                  $ref: '#/components/schemas/BacktestParams'
+      responses:
+        '200':
+          description: 验证完成
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    $ref: '#/components/schemas/ValidationReport'
+
+  # FR-006: 综合验证报告
+  /api/validation/report/{validation_id}:
+    get:
+      summary: 获取验证报告
+      description: 获取因子验证的详细报告，包含IC分析、分层收益等
+      parameters:
+        - name: validation_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: include_charts
+          in: query
+          description: 是否包含图表数据
+          schema:
+            type: boolean
+            default: false
+      responses:
+        '200':
+          description: 成功返回验证报告
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    $ref: '#/components/schemas/DetailedValidationReport'
+
+  # IC分析
+  /api/validation/ic-analysis:
+    post:
+      summary: IC分析
+      description: 计算因子的信息系数(IC)和相关统计指标
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                factor_id:
+                  type: string
+                date_range:
+                  $ref: '#/components/schemas/DateRange'
+                return_periods:
+                  type: array
+                  items:
+                    type: integer
+                  example: [1, 5, 10, 20]
+                  description: 收益率计算周期(天)
+      responses:
+        '200':
+          description: IC分析完成
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    $ref: '#/components/schemas/ICAnalysisResult'
+
+  # 分层收益分析
+  /api/validation/layered-returns:
+    post:
+      summary: 分层收益分析
+      description: 按因子值进行分层，分析各层收益表现
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                factor_id:
+                  type: string
+                date_range:
+                  $ref: '#/components/schemas/DateRange'
+                layers:
+                  type: integer
+                  minimum: 3
+                  maximum: 10
+                  default: 5
+                  description: 分层数量
+                rebalance_frequency:
+                  type: string
+                  enum: [daily, weekly, monthly]
+                  default: monthly
+      responses:
+        '200':
+          description: 分层分析完成
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    $ref: '#/components/schemas/LayeredReturnsResult'
+
+  # 换手率分析
+  /api/validation/turnover:
+    post:
+      summary: 换手率分析
+      description: 分析因子的换手率特征
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                factor_id:
+                  type: string
+                date_range:
+                  $ref: '#/components/schemas/DateRange'
+                top_percentile:
+                  type: number
+                  minimum: 0.01
+                  maximum: 0.5
+                  default: 0.1
+                  description: 顶部百分位阈值
+      responses:
+        '200':
+          description: 换手率分析完成
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    $ref: '#/components/schemas/TurnoverAnalysisResult'
+
+components:
+  schemas:
+    DateRange:
+      type: object
+      properties:
+        start_date:
+          type: string
+          format: date
+        end_date:
+          type: string
+          format: date
+
+    ValidationConfig:
+      type: object
+      properties:
+        train_period:
+          $ref: '#/components/schemas/DateRange'
+        test_period:
+          $ref: '#/components/schemas/DateRange'
+        validation_period:
+          $ref: '#/components/schemas/DateRange'
+        use_default_periods:
+          type: boolean
+          default: true
+          description: 是否使用默认划分(2010-2016/2017-2020/2021-至今)
+
+    BacktestParams:
+      type: object
+      properties:
+        initial_capital:
+          type: number
+          default: 1000000
+        commission_rate:
+          type: number
+          default: 0.0003
+        slippage:
+          type: number
+          default: 0.001
+        position_limit:
+          type: number
+          default: 0.05
+          description: 单只股票最大权重
+        max_positions:
+          type: integer
+          default: 50
+          description: 最大持仓数量
+
+    ValidationReport:
+      type: object
+      properties:
+        validation_id:
+          type: string
+        factor_id:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        validation_config:
+          $ref: '#/components/schemas/ValidationConfig'
+        summary:
+          $ref: '#/components/schemas/ValidationSummary'
+        hikyuu_backtest_results:
+          type: object
+          description: Hikyuu回测引擎原始结果
+
+    ValidationSummary:
+      type: object
+      properties:
+        overall_score:
+          type: number
+          minimum: 0
+          maximum: 100
+          description: 综合评分
+        train_performance:
+          $ref: '#/components/schemas/PerformanceMetrics'
+        test_performance:
+          $ref: '#/components/schemas/PerformanceMetrics'
+        validation_performance:
+          $ref: '#/components/schemas/PerformanceMetrics'
+        stability_score:
+          type: number
+          description: 稳定性评分
+        overfitting_risk:
+          type: string
+          enum: [low, medium, high]
+
+    DetailedValidationReport:
+      type: object
+      properties:
+        validation_id:
+          type: string
+        factor_id:
+          type: string
+        summary:
+          $ref: '#/components/schemas/ValidationSummary'
+        ic_analysis:
+          $ref: '#/components/schemas/ICAnalysisResult'
+        layered_returns:
+          $ref: '#/components/schemas/LayeredReturnsResult'
+        turnover_analysis:
+          $ref: '#/components/schemas/TurnoverAnalysisResult'
+        risk_metrics:
+          $ref: '#/components/schemas/RiskMetrics'
+        charts_data:
+          type: object
+          description: 图表数据(当include_charts=true时)
+
+    PerformanceMetrics:
+      type: object
+      properties:
+        annual_return:
+          type: number
+          description: 年化收益率
+        volatility:
+          type: number
+          description: 年化波动率
+        sharpe_ratio:
+          type: number
+          description: 夏普比率
+        max_drawdown:
+          type: number
+          description: 最大回撤
+        calmar_ratio:
+          type: number
+          description: 卡玛比率
+        win_rate:
+          type: number
+          description: 胜率
+
+    ICAnalysisResult:
+      type: object
+      properties:
+        ic_mean:
+          type: number
+          description: IC均值
+        ic_std:
+          type: number
+          description: IC标准差
+        ic_ir:
+          type: number
+          description: IC信息比率
+        ic_positive_rate:
+          type: number
+          description: IC正值比例
+        ic_by_period:
+          type: object
+          additionalProperties:
+            type: object
+            properties:
+              ic_values:
+                type: array
+                items:
+                  type: number
+              statistics:
+                type: object
+
+    LayeredReturnsResult:
+      type: object
+      properties:
+        layers:
+          type: integer
+        layer_returns:
+          type: array
+          items:
+            type: object
+            properties:
+              layer:
+                type: integer
+              annual_return:
+                type: number
+              volatility:
+                type: number
+              sharpe_ratio:
+                type: number
+              stock_count_avg:
+                type: number
+        monotonicity_score:
+          type: number
+          description: 单调性评分
+        top_bottom_spread:
+          type: number
+          description: 头尾分层收益差
+
+    TurnoverAnalysisResult:
+      type: object
+      properties:
+        monthly_turnover:
+          type: array
+          items:
+            type: object
+            properties:
+              date:
+                type: string
+                format: date
+              turnover_rate:
+                type: number
+        average_turnover:
+          type: number
+        turnover_volatility:
+          type: number
+        cost_impact:
+          type: number
+          description: 换手成本影响
+
+    RiskMetrics:
+      type: object
+      properties:
+        beta:
+          type: number
+          description: 市场beta
+        correlation_with_market:
+          type: number
+        factor_loadings:
+          type: object
+          description: 风险因子暴露
+        concentration_risk:
+          type: number
+          description: 集中度风险

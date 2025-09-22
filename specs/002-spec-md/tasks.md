@@ -52,11 +52,11 @@
 ## Phase 2: TDD-Foundation (基础测试框架)
 **目标**: 建立测试基础设施和工具
 
-- [ ] T006 Setup pytest configuration in pytest.ini with markers and test discovery
-- [ ] T007 Create test fixtures in tests/conftest.py (database, mock services, test data)
-- [ ] T008 Setup test utilities in tests/utils.py (assertions, helpers, mock factories)
-- [ ] T009 Create mock data generators in tests/fixtures/ (stock data, factor data, signals)
-- [ ] T010 Verify test framework runs: `pytest --collect-only` shows 0 tests
+- [x] T006 Setup pytest configuration in pytest.ini with markers and test discovery
+- [x] T007 Create test fixtures in tests/conftest.py (database, mock services, test data)
+- [x] T008 Setup test utilities in tests/utils.py (assertions, helpers, mock factories)
+- [x] T009 Create mock data generators in tests/fixtures/ (stock data, factor data, signals)
+- [x] T010 Verify test framework runs: `pytest --collect-only` shows 0 tests
 
 **依赖**: T001-T005
 **验证**: ✅ pytest 框架正常运行，可以发现和执行测试

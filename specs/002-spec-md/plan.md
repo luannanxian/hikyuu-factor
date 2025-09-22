@@ -1,7 +1,7 @@
 
 # Implementation Plan: A股全市场量化因子挖掘与决策支持系统
 
-**Branch**: `002-spec-md` | **Date**: 2025-09-20 | **Spec**: [spec.md](./spec.md)
+**Branch**: `002-spec-md` | **Date**: 2025-09-22 | **Spec**: [spec.md](./spec.md)
 **Input**: Feature specification from `/specs/002-spec-md/spec.md`
 
 ## Execution Flow (/plan command scope)
@@ -31,30 +31,52 @@
 - Phase 3-4: Implementation execution (manual or via tools)
 
 ## Summary
-基于Hikyuu框架构建的A股全市场量化因子挖掘与决策支持系统，提供数据驱动、可解释、可验证的交易洞察。系统采用Agent架构设计，支持因子计算、验证和信号生成的完整工具链。基于DeepWiki确认，Hikyuu框架在AMD 7950x上计算全A股市场20日均线仅需166毫秒，完全满足30分钟全市场因子计算和15分钟每日信号生成的性能要求。
+A股全市场量化因子挖掘与决策支持系统，专注于提供数据驱动、可解释、可验证的交易洞察，支持因子验证、信号生成和人工确认的完整工作流。技术方法基于Hikyuu量化框架的高性能Agent架构实现，确保30分钟内完成全市场因子计算和严格的时点数据访问。
 
 ## Technical Context
-**Language/Version**: Python 3.11+ (ARM NEON优化支持Apple Silicon)
-**Primary Dependencies**: Hikyuu量化框架(C++核心)>=2.6.8, FastAPI, SQLAlchemy, Pandas, NumPy, MySQL连接池
-**Storage**: MySQL 8.0+ (Hikyuu原生数据结构), HDF5内存映射, Redis (因子缓存), 文件系统 (审计日志)
-**Testing**: pytest, pytest-asyncio, pytest-mock (TDD强制要求)
-**Target Platform**: macOS (Apple Silicon ARM优化), Linux (生产环境), Docker容器化部署
-**Project Type**: single (Agent微服务架构)
-**Performance Goals**: 30分钟全市场单因子计算, 15分钟每日信号生成 (基于Hikyuu 166ms基准性能)
-**Constraints**: Point-in-Time数据访问约束, 强制人工确认交易信号, 不可变审计日志链
-**Scale/Scope**: 5000+A股股票全市场覆盖, 100+并发因子计算, 4个Agent微服务模块
+**Language/Version**: Python 3.11+
+**Primary Dependencies**: Hikyuu>=2.6.8, FastAPI, Pandas, NumPy, MySQL
+**Storage**: MySQL (分区表), 本地文件缓存 (factors/, signals/, audit/)
+**Testing**: pytest, 集成测试, 合约测试, TDD方法论
+**Target Platform**: Linux/macOS 服务器, Apple Silicon优化
+**Project Type**: single - Agent微服务架构
+**Performance Goals**: 30分钟全市场单因子计算, 15分钟每日信号生成, <200ms API响应
+**Constraints**: 严格时点数据访问, 强制人工确认, 不可变审计日志, ST股票自动过滤
+**Scale/Scope**: 5000只A股, 10年历史数据, 多因子并行计算, 可扩展因子库
 
 ## Constitution Check
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-**基于constitution.md的检查门控**:
-- **TDD强制要求**: ✓ 所有实现必须先写测试，测试失败后再实现
-- **Agent架构设计**: ✓ 每个Agent独立部署，通过RESTful API通信
-- **性能约束**: ✓ 基于Hikyuu 166ms基准，满足30分钟/15分钟性能目标
-- **简化原则**: ✓ 基于成熟的Hikyuu框架，避免重复造轮子
-- **技术选择**: ✓ CPU优化路径(多线程+SIMD+ARM NEON)，无需GPU加速
+### I. Hikyuu-First Principle
+- ✅ **PASS**: 优先使用Hikyuu框架的C++性能引擎
+- ✅ **PASS**: 利用Hikyuu FINANCE和MF(多因子)高级功能
+- ✅ **PASS**: 避免重复实现已有的技术指标计算
 
-**PASS**: 无constitutional违规项目
+### II. Agent-Based Architecture
+- ✅ **PASS**: 采用Agent微服务架构(DataManager, FactorCalculator, Validator, SignalGenerator)
+- ✅ **PASS**: 每个Agent独立可测试、可部署
+- ✅ **PASS**: RESTful API接口标准化
+
+### III. Test-First (NON-NEGOTIABLE)
+- ✅ **PASS**: TDD方法论强制要求
+- ✅ **PASS**: 合约测试优先于实现
+- ✅ **PASS**: 集成测试覆盖端到端工作流
+- ✅ **PASS**: 单元测试覆盖关键算法
+
+### IV. Point-in-Time Data Integrity
+- ✅ **PASS**: 严格时点数据访问，消除前视偏差
+- ✅ **PASS**: 不可变审计日志记录所有操作
+- ✅ **PASS**: 版本控制确保研究可重现性
+
+### V. Human-in-Loop Safety
+- ✅ **PASS**: 强制人工确认交易信号
+- ✅ **PASS**: 可解释的因子暴露归因
+- ✅ **PASS**: 风险检查和异常警报机制
+
+### VI. Performance & Scalability
+- ✅ **PASS**: 30分钟全市场因子计算目标
+- ✅ **PASS**: Apple Silicon和x86_64平台优化
+- ✅ **PASS**: 并行计算和内存优化策略
 
 ## Project Structure
 
@@ -106,7 +128,7 @@ ios/ or android/
 └── [platform-specific structure]
 ```
 
-**Structure Decision**: Option 1 (Single project) - Agent微服务架构，每个Agent独立但在同一代码库中，基于Hikyuu性能优化
+**Structure Decision**: [DEFAULT to Option 1 unless Technical Context indicates web/mobile app]
 
 ## Phase 0: Outline & Research
 1. **Extract unknowns from Technical Context** above:
@@ -165,28 +187,46 @@ ios/ or android/
 *This section describes what the /tasks command will do - DO NOT execute during /plan*
 
 **Task Generation Strategy**:
-- Load `.specify/templates/tasks-template.md` as base
-- Generate tasks from Phase 1 design docs (contracts, data model, quickstart)
-- **平台优化任务**: 每个Agent添加平台检测和优化配置任务 [P]
-- Each contract → contract test task [P] (包含新的system-api.yaml)
-- Each entity → model creation task [P] (包含OptimizationConfig模型)
-- Each user story → integration test task
-- Implementation tasks to make tests pass
+基于Phase 1的设计文档生成详细的实施任务列表：
 
-**新增任务类别**:
-- **Platform Setup**: 平台检测、优化配置管理
-- **Performance Tests**: 针对Apple Silicon/x86_64的性能基准测试
-- **Agent Integration**: 平台优化在各Agent中的集成
+1. **从API合约生成合约测试任务**
+   - data_manager_api.yaml → 数据管理Agent合约测试 [P]
+   - factor_calculation_api.yaml → 因子计算Agent合约测试 [P]
+   - validation_api.yaml → 验证Agent合约测试 [P]
+   - signal_generation_api.yaml → 信号生成Agent合约测试 [P]
+
+2. **从数据模型生成模型实现任务**
+   - PlatformOptimizer模型创建 [P]
+   - StockPoolManager模型创建 [P]
+   - HikyuuFactorCalculator模型创建 [P]
+   - FactorDefinition和ValidationConfig模型创建 [P]
+
+3. **从quickstart.md生成集成测试任务**
+   - 数据准备和验证端到端测试
+   - 因子开发和计算集成测试
+   - 因子验证工作流测试
+   - 交易信号生成集成测试
+
+4. **Agent实现任务**
+   - DataManagerAgent实现 (基于合约测试)
+   - FactorCalculationAgent实现 (基于合约测试)
+   - ValidationAgent实现 (基于合约测试)
+   - SignalGenerationAgent实现 (基于合约测试)
 
 **Ordering Strategy**:
-- TDD order: Tests before implementation
-- Platform setup before Agent initialization
-- Dependency order: Models before services before UI
-- Mark [P] for parallel execution (independent files)
+遵循TDD原则和依赖关系：
+1. **Phase 2.1**: 测试优先 - 合约测试必须先于实现
+2. **Phase 2.2**: 依赖排序 - 模型 → 服务 → Agent → 集成
+3. **Phase 2.3**: 并行标记 - [P]标记独立文件，可并行执行
 
-**Estimated Output**: 35-40 numbered, ordered tasks in tasks.md (增加了平台优化相关任务)
+**Estimated Output**:
+- 约30个编号任务，按TDD和依赖关系排序
+- 15个合约测试任务 [P]
+- 8个模型实现任务 [P]
+- 4个Agent实现任务
+- 3个集成测试任务
 
-**IMPORTANT**: This phase is executed by the /tasks command, NOT by /plan
+**IMPORTANT**: 此阶段由/tasks命令执行，/plan命令仅描述方法
 
 ## Phase 3+: Future Implementation
 *These phases are beyond the scope of the /plan command*
@@ -208,18 +248,18 @@ ios/ or android/
 *This checklist is updated during execution flow*
 
 **Phase Status**:
-- [x] Phase 0: Research complete (/plan command) - 平台自适应优化策略已确定
-- [x] Phase 1: Design complete (/plan command) - 数据模型、API契约、快速开始指南已更新
-- [x] Phase 2: Task planning complete (/plan command - describe approach only) - 任务生成策略已规划
-- [x] Phase 3: Tasks generated (/tasks command) - 74个具体实现任务已生成
+- [x] Phase 0: Research complete (/plan command)
+- [x] Phase 1: Design complete (/plan command)
+- [x] Phase 2: Task planning complete (/plan command - describe approach only)
+- [ ] Phase 3: Tasks generated (/tasks command)
 - [ ] Phase 4: Implementation complete
 - [ ] Phase 5: Validation passed
 
 **Gate Status**:
 - [x] Initial Constitution Check: PASS
-- [x] Post-Design Constitution Check: PASS - 平台优化架构符合简化原则
-- [x] All NEEDS CLARIFICATION resolved - Hikyuu性能特征已通过DeepWiki确认
-- [x] Complexity deviations documented - 无需额外复杂性
+- [x] Post-Design Constitution Check: PASS
+- [x] All NEEDS CLARIFICATION resolved
+- [x] Complexity deviations documented
 
 ---
 *Based on Constitution v2.1.1 - See `/memory/constitution.md`*

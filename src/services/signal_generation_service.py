@@ -20,9 +20,9 @@ import uuid
 import json
 from pathlib import Path
 
-from ..models.hikyuu_models import TradingSignal, SignalType, PortfolioPosition, PositionType
-from ..models.validation_models import RiskAssessment, RiskFactor, RiskLevel, RiskCategory
-from ..models.audit_models import (
+from models.hikyuu_models import TradingSignal, SignalType, PortfolioPosition, PositionType
+from models.validation_models import RiskAssessment, RiskFactor, RiskLevel, RiskCategory
+from models.audit_models import (
     AuditEntry, ConfirmationRecord, ConfirmationStatus,
     AuditEventType, create_signal_confirmation_request
 )

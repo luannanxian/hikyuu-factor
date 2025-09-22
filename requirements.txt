@@ -19,9 +19,18 @@ pandas>=2.1.0
 numpy>=1.25.0
 scipy>=1.11.0
 
+# System monitoring and utilities
+psutil>=5.9.0
+
 # Caching and async
 redis>=5.0.0
 aioredis>=2.0.0
+
+# Configuration files
+PyYAML>=6.0.0
+
+# HTTP client (for external API calls)
+requests>=2.31.0
 
 # Testing framework (TDD requirement)
 pytest>=7.4.0

@@ -17,10 +17,10 @@ from typing import Dict, List, Optional, Any
 from fastapi import HTTPException
 from pydantic import BaseModel
 
-from .base_agent import BaseAgent
-from ..models.agent_models import AgentType, TaskRequest, TaskResult, AgentResponse
-from ..services.validation_service import ValidationService
-from ..models.audit_models import AuditEntry, AuditEventType
+from agents.base_agent import BaseAgent
+from models.agent_models import AgentType, TaskRequest, TaskResult, AgentResponse
+from services.validation_service import ValidationService
+from models.audit_models import AuditEntry, AuditEventType
 
 
 class FactorValidationRequest(BaseModel):
@@ -68,7 +68,7 @@ class ValidationAgent(BaseAgent):
     提供RESTful API和Agent间通信接口。
     """
 
-    def __init__(self, config: Optional[Dict[str, Any]] = None):
+    def __init__(self, config: Optional[Dict[str, Any]] = None) -> None:
         # 默认配置
         default_config = {
             'host': '0.0.0.0',
@@ -153,11 +153,11 @@ class ValidationAgent(BaseAgent):
         self.logger.info("Cleaning up Validation Agent...")
         # 这里可以添加资源清理逻辑
 
-    def _setup_validation_api_routes(self):
+    def _setup_validation_api_routes(self) -> None:
         """设置验证相关的API路由"""
 
         @self.app.post("/validation/factors")
-        async def validate_factors(request: FactorValidationRequest):
+        async def validate_factors(request: FactorValidationRequest) -> None:
             """因子验证接口"""
             try:
                 # 解析日期
@@ -185,7 +185,7 @@ class ValidationAgent(BaseAgent):
                 raise HTTPException(status_code=500, detail=str(e))
 
         @self.app.post("/validation/backtest")
-        async def run_backtest(request: BacktestRequest):
+        async def run_backtest(request: BacktestRequest) -> None:
             """回测验证接口"""
             try:
                 # 解析日期
@@ -220,7 +220,7 @@ class ValidationAgent(BaseAgent):
                 raise HTTPException(status_code=500, detail=str(e))
 
         @self.app.post("/validation/risk-assessment")
-        async def assess_risk(request: RiskAssessmentRequest):
+        async def assess_risk(request: RiskAssessmentRequest) -> None:
             """风险评估接口"""
             try:
                 # 执行风险评估
@@ -242,7 +242,7 @@ class ValidationAgent(BaseAgent):
                 raise HTTPException(status_code=500, detail=str(e))
 
         @self.app.post("/validation/performance")
-        async def analyze_performance(request: PerformanceAnalysisRequest):
+        async def analyze_performance(request: PerformanceAnalysisRequest) -> None:
             """性能分析接口"""
             try:
                 # 执行性能分析
@@ -264,7 +264,7 @@ class ValidationAgent(BaseAgent):
                 raise HTTPException(status_code=500, detail=str(e))
 
         @self.app.get("/validation/status")
-        async def get_validation_status():
+        async def get_validation_status() -> None:
             """获取验证状态接口"""
             try:
                 return {
@@ -287,7 +287,7 @@ class ValidationAgent(BaseAgent):
                 raise HTTPException(status_code=500, detail=str(e))
 
         @self.app.get("/validation/reports/{validation_id}")
-        async def get_validation_report(validation_id: str):
+        async def get_validation_report(validation_id: str) -> None:
             """获取验证报告接口"""
             try:
                 # 这里应该实现从存储中获取验证报告的逻辑
@@ -314,7 +314,7 @@ class ValidationAgent(BaseAgent):
                 self.logger.error(f"Get validation report failed: {e}")
                 raise HTTPException(status_code=500, detail=str(e))
 
-    def _setup_message_handlers(self):
+    def _setup_message_handlers(self) -> None:
         """设置消息处理器"""
 
         async def handle_factor_validation(payload: Dict[str, Any]) -> Dict[str, Any]:
@@ -531,20 +531,20 @@ async def create_validation_agent(config: Optional[Dict[str, Any]] = None) -> Va
     return agent
 
 
-def run_validation_agent(config: Optional[Dict[str, Any]] = None):
+def run_validation_agent(config: Optional[Dict[str, Any]] = None) -> None:
     """运行验证Agent服务器"""
     agent = ValidationAgent(config)
 
-    async def startup():
+    async def startup() -> None:
         await agent.start()
 
     # 添加启动事件处理器
     @agent.app.on_event("startup")
-    async def startup_event():
+    async def startup_event() -> None:
         await startup()
 
     @agent.app.on_event("shutdown")
-    async def shutdown_event():
+    async def shutdown_event() -> None:
         await agent.stop()
 
     # 运行服务器

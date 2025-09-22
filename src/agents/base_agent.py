@@ -11,20 +11,18 @@ Agent架构的基础类，提供：
 
 import asyncio
 import logging
-import json
 import uuid
 from datetime import datetime
 from typing import Dict, List, Optional, Any, Callable
 from abc import ABC, abstractmethod
 from fastapi import FastAPI, HTTPException, BackgroundTasks
-from fastapi.responses import JSONResponse
 import uvicorn
 
-from ..models.agent_models import (
+from models.agent_models import (
     AgentMessage, AgentResponse, TaskRequest, TaskResult,
     AgentType, MessageType, TaskStatus, Priority
 )
-from ..models.audit_models import AuditEntry, AuditEventType
+from models.audit_models import AuditEntry, AuditEventType
 
 
 class BaseAgent(ABC):
@@ -104,11 +102,11 @@ class BaseAgent(ABC):
         """
         pass
 
-    def _setup_api_routes(self):
+    def _setup_api_routes(self) -> None:
         """设置API路由"""
 
         @self.app.get("/health")
-        async def health_check():
+        async def health_check() -> Dict[str, Any]:
             """健康检查接口"""
             return {
                 "agent_id": self.agent_id,
@@ -121,7 +119,7 @@ class BaseAgent(ABC):
             }
 
         @self.app.get("/info")
-        async def agent_info():
+        async def agent_info() -> Dict[str, Any]:
             """Agent信息接口"""
             return {
                 "agent_id": self.agent_id,
@@ -136,7 +134,7 @@ class BaseAgent(ABC):
             }
 
         @self.app.post("/message")
-        async def handle_message(message_data: dict):
+        async def handle_message(message_data: dict) -> Dict[str, Any]:
             """消息处理接口"""
             try:
                 message = AgentMessage.from_dict(message_data)
@@ -150,7 +148,7 @@ class BaseAgent(ABC):
                 ).to_dict()
 
         @self.app.post("/task")
-        async def submit_task(task_data: dict, background_tasks: BackgroundTasks):
+        async def submit_task(task_data: dict, background_tasks: BackgroundTasks) -> Dict[str, Any]:
             """任务提交接口"""
             try:
                 task_request = TaskRequest(**task_data)
@@ -172,7 +170,7 @@ class BaseAgent(ABC):
                 raise HTTPException(status_code=400, detail=str(e))
 
         @self.app.get("/task/{task_id}")
-        async def get_task_status(task_id: str):
+        async def get_task_status(task_id: str) -> Dict[str, Any]:
             """任务状态查询接口"""
             if task_id in self.running_tasks:
                 return self.running_tasks[task_id].to_dict()
@@ -185,7 +183,7 @@ class BaseAgent(ABC):
             raise HTTPException(status_code=404, detail="Task not found")
 
         @self.app.get("/tasks")
-        async def list_tasks():
+        async def list_tasks() -> Dict[str, Any]:
             """任务列表接口"""
             return {
                 "running_tasks": {

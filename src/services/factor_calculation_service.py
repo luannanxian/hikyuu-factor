@@ -37,11 +37,11 @@ except ImportError:
     Query = Any
     FINANCE = Any
 
-from ..models.hikyuu_models import (
+from models.hikyuu_models import (
     FactorData, FactorType, FactorCalculationRequest,
     FactorCalculationResult, create_factor_data_from_hikyuu
 )
-from ..models.audit_models import AuditEntry, AuditEventType
+from models.audit_models import AuditEntry, AuditEventType
 
 
 class PlatformOptimizer:

@@ -17,10 +17,10 @@ from typing import Dict, List, Optional, Any
 from fastapi import HTTPException
 from pydantic import BaseModel
 
-from .base_agent import BaseAgent
-from ..models.agent_models import AgentType, TaskRequest, TaskResult, AgentResponse
-from ..services.signal_generation_service import SignalGenerationService
-from ..models.audit_models import AuditEntry, AuditEventType
+from agents.base_agent import BaseAgent
+from models.agent_models import AgentType, TaskRequest, TaskResult, AgentResponse
+from services.signal_generation_service import SignalGenerationService
+from models.audit_models import AuditEntry, AuditEventType
 
 
 class SignalGenerationRequest(BaseModel):
@@ -65,7 +65,7 @@ class SignalGenerationAgent(BaseAgent):
     提供RESTful API和Agent间通信接口。
     """
 
-    def __init__(self, config: Optional[Dict[str, Any]] = None):
+    def __init__(self, config: Optional[Dict[str, Any]] = None) -> None:
         # 默认配置
         default_config = {
             'host': '0.0.0.0',
@@ -152,11 +152,11 @@ class SignalGenerationAgent(BaseAgent):
         self.logger.info("Cleaning up Signal Generation Agent...")
         # 这里可以添加资源清理逻辑
 
-    def _setup_signal_api_routes(self):
+    def _setup_signal_api_routes(self) -> None:
         """设置信号生成相关的API路由"""
 
         @self.app.post("/signals/generate")
-        async def generate_signals(request: SignalGenerationRequest):
+        async def generate_signals(request: SignalGenerationRequest) -> None:
             """信号生成接口"""
             try:
                 # 解析日期
@@ -195,7 +195,7 @@ class SignalGenerationAgent(BaseAgent):
                 raise HTTPException(status_code=500, detail=str(e))
 
         @self.app.post("/signals/confirm")
-        async def confirm_signals(request: SignalConfirmationRequest):
+        async def confirm_signals(request: SignalConfirmationRequest) -> None:
             """信号确认接口"""
             try:
                 # 处理信号确认
@@ -233,7 +233,7 @@ class SignalGenerationAgent(BaseAgent):
                 raise HTTPException(status_code=500, detail=str(e))
 
         @self.app.post("/strategies/execute")
-        async def execute_strategy(request: StrategyExecutionRequest):
+        async def execute_strategy(request: StrategyExecutionRequest) -> None:
             """策略执行接口"""
             try:
                 # 执行交易策略
@@ -254,7 +254,7 @@ class SignalGenerationAgent(BaseAgent):
                 raise HTTPException(status_code=500, detail=str(e))
 
         @self.app.post("/signals/monitor")
-        async def monitor_signals(request: SignalMonitoringRequest):
+        async def monitor_signals(request: SignalMonitoringRequest) -> None:
             """信号监控接口"""
             try:
                 # 启动信号监控
@@ -275,7 +275,7 @@ class SignalGenerationAgent(BaseAgent):
                 raise HTTPException(status_code=500, detail=str(e))
 
         @self.app.get("/signals/pending-confirmations")
-        async def get_pending_confirmations():
+        async def get_pending_confirmations() -> None:
             """获取待确认信号接口"""
             try:
                 result = await self.signal_service.confirmation_system.get_pending_confirmations()
@@ -291,7 +291,7 @@ class SignalGenerationAgent(BaseAgent):
                 raise HTTPException(status_code=500, detail=str(e))
 
         @self.app.get("/signals/status")
-        async def get_signal_status():
+        async def get_signal_status() -> None:
             """获取信号状态接口"""
             try:
                 # 获取信号生成统计
@@ -310,7 +310,7 @@ class SignalGenerationAgent(BaseAgent):
                 raise HTTPException(status_code=500, detail=str(e))
 
         @self.app.get("/signals/{signal_id}")
-        async def get_signal_details(signal_id: str):
+        async def get_signal_details(signal_id: str) -> None:
             """获取信号详情接口"""
             try:
                 result = await self.signal_service.get_signal_details(signal_id)
@@ -331,7 +331,7 @@ class SignalGenerationAgent(BaseAgent):
                 raise HTTPException(status_code=500, detail=str(e))
 
         @self.app.post("/risk/check")
-        async def check_risk_limits(risk_data: dict):
+        async def check_risk_limits(risk_data: dict) -> None:
             """风险检查接口"""
             try:
                 result = await self.signal_service.risk_controller.check_risk_limits(risk_data)
@@ -346,7 +346,7 @@ class SignalGenerationAgent(BaseAgent):
                 self.logger.error(f"Risk check failed: {e}")
                 raise HTTPException(status_code=500, detail=str(e))
 
-    def _setup_message_handlers(self):
+    def _setup_message_handlers(self) -> None:
         """设置消息处理器"""
 
         async def handle_signal_generation(payload: Dict[str, Any]) -> Dict[str, Any]:
@@ -566,20 +566,20 @@ async def create_signal_generation_agent(config: Optional[Dict[str, Any]] = None
     return agent
 
 
-def run_signal_generation_agent(config: Optional[Dict[str, Any]] = None):
+def run_signal_generation_agent(config: Optional[Dict[str, Any]] = None) -> None:
     """运行信号生成Agent服务器"""
     agent = SignalGenerationAgent(config)
 
-    async def startup():
+    async def startup() -> None:
         await agent.start()
 
     # 添加启动事件处理器
     @agent.app.on_event("startup")
-    async def startup_event():
+    async def startup_event() -> None:
         await startup()
 
     @agent.app.on_event("shutdown")
-    async def shutdown_event():
+    async def shutdown_event() -> None:
         await agent.stop()
 
     # 运行服务器

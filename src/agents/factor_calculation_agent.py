@@ -17,10 +17,10 @@ from typing import Dict, List, Optional, Any
 from fastapi import HTTPException
 from pydantic import BaseModel
 
-from .base_agent import BaseAgent
-from ..models.agent_models import AgentType, TaskRequest, TaskResult, AgentResponse
-from ..services.factor_calculation_service import FactorCalculationService
-from ..models.audit_models import AuditEntry, AuditEventType
+from agents.base_agent import BaseAgent
+from models.agent_models import AgentType, TaskRequest, TaskResult, AgentResponse
+from services.factor_calculation_service import FactorCalculationService
+from models.audit_models import AuditEntry, AuditEventType
 
 
 class FactorRegistrationRequest(BaseModel):
@@ -62,7 +62,7 @@ class FactorCalculationAgent(BaseAgent):
     提供RESTful API和Agent间通信接口。
     """
 
-    def __init__(self, config: Optional[Dict[str, Any]] = None):
+    def __init__(self, config: Optional[Dict[str, Any]] = None) -> None:
         # 默认配置
         default_config = {
             'host': '0.0.0.0',
@@ -137,11 +137,11 @@ class FactorCalculationAgent(BaseAgent):
         self.logger.info("Cleaning up Factor Calculation Agent...")
         # 这里可以添加资源清理逻辑
 
-    def _setup_factor_api_routes(self):
+    def _setup_factor_api_routes(self) -> None:
         """设置因子计算相关的API路由"""
 
         @self.app.post("/factors/register")
-        async def register_factor(request: FactorRegistrationRequest):
+        async def register_factor(request: FactorRegistrationRequest) -> None:
             """因子注册接口"""
             try:
                 # 注册因子
@@ -166,7 +166,7 @@ class FactorCalculationAgent(BaseAgent):
                 raise HTTPException(status_code=500, detail=str(e))
 
         @self.app.post("/factors/calculate")
-        async def calculate_factors(request: FactorCalculationRequest):
+        async def calculate_factors(request: FactorCalculationRequest) -> None:
             """因子计算接口"""
             try:
                 # 解析日期
@@ -194,7 +194,7 @@ class FactorCalculationAgent(BaseAgent):
                 raise HTTPException(status_code=500, detail=str(e))
 
         @self.app.post("/factors/query")
-        async def query_factors(request: FactorQueryRequest):
+        async def query_factors(request: FactorQueryRequest) -> None:
             """因子查询接口"""
             try:
                 # 解析日期
@@ -222,7 +222,7 @@ class FactorCalculationAgent(BaseAgent):
                 raise HTTPException(status_code=500, detail=str(e))
 
         @self.app.get("/factors/registry")
-        async def get_factor_registry():
+        async def get_factor_registry() -> None:
             """获取因子注册表接口"""
             try:
                 result = await self.factor_service.factor_registry.get_all_factors()
@@ -238,7 +238,7 @@ class FactorCalculationAgent(BaseAgent):
                 raise HTTPException(status_code=500, detail=str(e))
 
         @self.app.get("/factors/{factor_id}")
-        async def get_factor_info(factor_id: str):
+        async def get_factor_info(factor_id: str) -> None:
             """获取单个因子信息接口"""
             try:
                 result = await self.factor_service.factor_registry.get_factor_info(factor_id)
@@ -259,7 +259,7 @@ class FactorCalculationAgent(BaseAgent):
                 raise HTTPException(status_code=500, detail=str(e))
 
         @self.app.get("/platform/status")
-        async def get_platform_status():
+        async def get_platform_status() -> None:
             """获取平台状态接口"""
             try:
                 platform_info = await self.factor_service.platform_optimizer.get_platform_info()
@@ -277,7 +277,7 @@ class FactorCalculationAgent(BaseAgent):
                 raise HTTPException(status_code=500, detail=str(e))
 
         @self.app.post("/platform/optimize")
-        async def optimize_platform():
+        async def optimize_platform() -> None:
             """平台优化接口"""
             try:
                 result = await self.factor_service.platform_optimizer.optimize_performance()
@@ -292,7 +292,7 @@ class FactorCalculationAgent(BaseAgent):
                 self.logger.error(f"Platform optimization failed: {e}")
                 raise HTTPException(status_code=500, detail=str(e))
 
-    def _setup_message_handlers(self):
+    def _setup_message_handlers(self) -> None:
         """设置消息处理器"""
 
         async def handle_factor_calculation(payload: Dict[str, Any]) -> Dict[str, Any]:
@@ -479,20 +479,20 @@ async def create_factor_calculation_agent(config: Optional[Dict[str, Any]] = Non
     return agent
 
 
-def run_factor_calculation_agent(config: Optional[Dict[str, Any]] = None):
+def run_factor_calculation_agent(config: Optional[Dict[str, Any]] = None) -> None:
     """运行因子计算Agent服务器"""
     agent = FactorCalculationAgent(config)
 
-    async def startup():
+    async def startup() -> None:
         await agent.start()
 
     # 添加启动事件处理器
     @agent.app.on_event("startup")
-    async def startup_event():
+    async def startup_event() -> None:
         await startup()
 
     @agent.app.on_event("shutdown")
-    async def shutdown_event():
+    async def shutdown_event() -> None:
         await agent.stop()
 
     # 运行服务器

@@ -32,9 +32,9 @@ except ImportError:
     Query = Any
     FINANCE = Any
 
-from ..models.hikyuu_models import FactorData, FactorType
-from ..models.validation_models import ValidationRule, ValidationResult, ValidationIssue, ValidationSeverity
-from ..models.audit_models import AuditEntry, AuditEventType
+from models.hikyuu_models import FactorData, FactorType
+from models.validation_models import ValidationRule, ValidationResult, ValidationIssue, ValidationSeverity
+from models.audit_models import AuditEntry, AuditEventType
 
 
 class DataUpdater:
@@ -289,7 +289,7 @@ class DataQualityChecker:
 
     def _get_default_rules(self) -> List[ValidationRule]:
         """获取默认的数据质量检查规则"""
-        from ..models.validation_models import ValidationRuleType
+        from models.validation_models import ValidationRuleType
 
         rules = []
 

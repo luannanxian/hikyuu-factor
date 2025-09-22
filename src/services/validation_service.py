@@ -19,12 +19,12 @@ import numpy as np
 from pathlib import Path
 import json
 
-from ..models.validation_models import (
+from models.validation_models import (
     ValidationRule, ValidationResult, ValidationIssue, ValidationSeverity,
     RiskFactor, RiskAssessment, RiskLevel, RiskCategory,
     create_statistical_validation_rules, create_correlation_validation_rules
 )
-from ..models.hikyuu_models import FactorData
+from models.hikyuu_models import FactorData
 
 
 class ValidationConfig:

@@ -10,17 +10,16 @@ Data Manager Agent
 基于Phase 6 DataManagerService实现的微服务Agent。
 """
 
-import asyncio
 import logging
 from datetime import datetime, date, timedelta
 from typing import Dict, List, Optional, Any
 from fastapi import HTTPException
 from pydantic import BaseModel
 
-from .base_agent import BaseAgent
-from ..models.agent_models import AgentType, TaskRequest, TaskResult, AgentResponse
-from ..services.data_manager_service import DataManagerService
-from ..models.audit_models import AuditEntry, AuditEventType
+from agents.base_agent import BaseAgent
+from models.agent_models import AgentType, TaskRequest, TaskResult, AgentResponse
+from services.data_manager_service import DataManagerService
+from models.audit_models import AuditEntry, AuditEventType
 
 
 class DataUpdateRequest(BaseModel):
@@ -46,7 +45,7 @@ class DataManagerAgent(BaseAgent):
     提供RESTful API和Agent间通信接口。
     """
 
-    def __init__(self, config: Optional[Dict[str, Any]] = None):
+    def __init__(self, config: Optional[Dict[str, Any]] = None) -> None:
         # 默认配置
         default_config = {
             'host': '0.0.0.0',
@@ -81,7 +80,7 @@ class DataManagerAgent(BaseAgent):
         super().__init__(AgentType.DATA_MANAGER, config=default_config)
 
         # 数据管理服务
-        self.data_service = None
+        self.data_service: Optional[DataManagerService] = None
 
         # 注册API路由
         self._setup_data_api_routes()
@@ -118,13 +117,16 @@ class DataManagerAgent(BaseAgent):
         self.logger.info("Cleaning up Data Manager Agent...")
         # 这里可以添加资源清理逻辑
 
-    def _setup_data_api_routes(self):
+    def _setup_data_api_routes(self) -> None:
         """设置数据管理相关的API路由"""
 
         @self.app.post("/data/update")
-        async def update_market_data(request: DataUpdateRequest):
+        async def update_market_data(request: DataUpdateRequest) -> Dict[str, Any]:
             """更新市场数据接口"""
             try:
+                if self.data_service is None:
+                    raise HTTPException(status_code=500, detail="Data service not initialized")
+
                 # 解析日期
                 start_date = datetime.fromisoformat(request.start_date).date() if request.start_date else None
                 end_date = datetime.fromisoformat(request.end_date).date() if request.end_date else None
@@ -148,9 +150,12 @@ class DataManagerAgent(BaseAgent):
                 raise HTTPException(status_code=500, detail=str(e))
 
         @self.app.post("/data/quality-check")
-        async def check_data_quality(request: DataQualityCheckRequest):
+        async def check_data_quality(request: DataQualityCheckRequest) -> Dict[str, Any]:
             """数据质量检查接口"""
             try:
+                if self.data_service is None:
+                    raise HTTPException(status_code=500, detail="Data service not initialized")
+
                 # 获取样本数据进行质量检查
                 sample_data = self.data_service._get_sample_data_for_quality_check()
 
@@ -171,9 +176,12 @@ class DataManagerAgent(BaseAgent):
                 raise HTTPException(status_code=500, detail=str(e))
 
         @self.app.post("/data/workflow")
-        async def execute_data_workflow(workflow_config: dict):
+        async def execute_data_workflow(workflow_config: dict) -> Dict[str, Any]:
             """执行数据工作流接口"""
             try:
+                if self.data_service is None:
+                    raise HTTPException(status_code=500, detail="Data service not initialized")
+
                 result = await self.data_service.execute_data_workflow(workflow_config)
 
                 return {
@@ -192,9 +200,12 @@ class DataManagerAgent(BaseAgent):
             start_date: Optional[str] = None,
             end_date: Optional[str] = None,
             data_type: str = "kdata"
-        ):
+        ) -> Dict[str, Any]:
             """获取单个股票数据接口"""
             try:
+                if self.data_service is None:
+                    raise HTTPException(status_code=500, detail="Data service not initialized")
+
                 # 解析日期
                 start_dt = datetime.fromisoformat(start_date).date() if start_date else date.today() - timedelta(days=30)
                 end_dt = datetime.fromisoformat(end_date).date() if end_date else date.today()
@@ -219,7 +230,7 @@ class DataManagerAgent(BaseAgent):
                 raise HTTPException(status_code=500, detail=str(e))
 
         @self.app.get("/data/status")
-        async def get_data_status():
+        async def get_data_status() -> Dict[str, Any]:
             """获取数据状态接口"""
             try:
                 # 这里可以添加数据状态统计逻辑
@@ -234,11 +245,14 @@ class DataManagerAgent(BaseAgent):
                 self.logger.error(f"Get data status failed: {e}")
                 raise HTTPException(status_code=500, detail=str(e))
 
-    def _setup_message_handlers(self):
+    def _setup_message_handlers(self) -> None:
         """设置消息处理器"""
 
         async def handle_data_update(payload: Dict[str, Any]) -> Dict[str, Any]:
             """处理数据更新消息"""
+            if self.data_service is None:
+                return {"error": "Data service not initialized"}
+
             stock_codes = payload.get('stock_codes')
             start_date = payload.get('start_date')
             end_date = payload.get('end_date')
@@ -390,20 +404,20 @@ async def create_data_manager_agent(config: Optional[Dict[str, Any]] = None) -> 
     return agent
 
 
-def run_data_manager_agent(config: Optional[Dict[str, Any]] = None):
+def run_data_manager_agent(config: Optional[Dict[str, Any]] = None) -> None:
     """运行数据管理Agent服务器"""
     agent = DataManagerAgent(config)
 
-    async def startup():
+    async def startup() -> None:
         await agent.start()
 
     # 添加启动事件处理器
     @agent.app.on_event("startup")
-    async def startup_event():
+    async def startup_event() -> None:
         await startup()
 
     @agent.app.on_event("shutdown")
-    async def shutdown_event():
+    async def shutdown_event() -> None:
         await agent.stop()
 
     # 运行服务器

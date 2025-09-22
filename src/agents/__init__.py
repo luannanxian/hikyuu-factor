@@ -14,11 +14,11 @@ Agents Package - 微服务Agent架构
 - 完整的审计跟踪
 """
 
-from .base_agent import BaseAgent
-from .data_manager_agent import DataManagerAgent, create_data_manager_agent, run_data_manager_agent
-from .factor_calculation_agent import FactorCalculationAgent, create_factor_calculation_agent, run_factor_calculation_agent
-from .validation_agent import ValidationAgent, create_validation_agent, run_validation_agent
-from .signal_generation_agent import SignalGenerationAgent, create_signal_generation_agent, run_signal_generation_agent
+from agents.base_agent import BaseAgent
+from agents.data_manager_agent import DataManagerAgent, create_data_manager_agent, run_data_manager_agent
+from agents.factor_calculation_agent import FactorCalculationAgent, create_factor_calculation_agent, run_factor_calculation_agent
+from agents.validation_agent import ValidationAgent, create_validation_agent, run_validation_agent
+from agents.signal_generation_agent import SignalGenerationAgent, create_signal_generation_agent, run_signal_generation_agent
 
 __all__ = [
     'BaseAgent',

@@ -35,6 +35,8 @@ except ImportError:
 from models.hikyuu_models import FactorData, FactorType
 from models.validation_models import ValidationRule, ValidationResult, ValidationIssue, ValidationSeverity
 from models.audit_models import AuditEntry, AuditEventType
+from data.repository import stock_repository, market_data_repository
+from lib.environment import env_manager, warn_mock_data
 
 
 class DataUpdater:
@@ -877,6 +879,7 @@ class DataManagerService:
 
     集成DataUpdater, DataQualityChecker, DataExceptionHandler，
     提供完整的数据管理解决方案。
+    通过数据仓库层访问股票和市场数据。
     """
 
     def __init__(self, config: Optional[Dict[str, Any]] = None):
@@ -890,6 +893,92 @@ class DataManagerService:
 
         # 审计配置
         self.enable_audit = self.config.get('enable_audit', True)
+
+    def get_stock_list(self, market: Optional[str] = None,
+                      sector: Optional[str] = None) -> List[Dict[str, Any]]:
+        """获取股票列表"""
+        try:
+            if market:
+                stocks = stock_repository.get_stocks_by_market(market)
+            elif sector:
+                stocks = stock_repository.get_stocks_by_sector(sector)
+            else:
+                stocks = stock_repository.get_all_stocks()
+
+            return stocks
+        except Exception as e:
+            self.logger.error(f"Failed to get stock list: {e}")
+            return []
+
+    def get_market_data(self, stock_code: str, start_date: str,
+                       end_date: str) -> Dict[str, Any]:
+        """获取市场行情数据"""
+        try:
+            # 解析日期
+            start = datetime.strptime(start_date, "%Y-%m-%d").date()
+            end = datetime.strptime(end_date, "%Y-%m-%d").date()
+
+            # 从数据仓库获取数据
+            df = market_data_repository.get_market_data(stock_code, start, end)
+
+            if df.empty:
+                return {
+                    "stock_code": stock_code,
+                    "data": [],
+                    "count": 0
+                }
+
+            # 转换为API格式
+            data = []
+            for _, row in df.iterrows():
+                data.append({
+                    "date": row['trade_date'].strftime("%Y-%m-%d") if hasattr(row['trade_date'], 'strftime') else str(row['trade_date']),
+                    "open": float(row['open_price']),
+                    "high": float(row['high_price']),
+                    "low": float(row['low_price']),
+                    "close": float(row['close_price']),
+                    "volume": int(row['volume']),
+                    "amount": float(row['amount'])
+                })
+
+            return {
+                "stock_code": stock_code,
+                "data": data,
+                "count": len(data)
+            }
+        except Exception as e:
+            self.logger.error(f"Failed to get market data for {stock_code}: {e}")
+            return {
+                "stock_code": stock_code,
+                "data": [],
+                "count": 0,
+                "error": str(e)
+            }
+
+    def get_stock_info(self, stock_code: str) -> Dict[str, Any]:
+        """获取股票基本信息"""
+        try:
+            stock_info = stock_repository.get_stock_by_code(stock_code)
+
+            if stock_info:
+                # 转换日期格式
+                if stock_info.get('list_date'):
+                    stock_info['list_date'] = stock_info['list_date'].strftime("%Y-%m-%d") if hasattr(stock_info['list_date'], 'strftime') else str(stock_info['list_date'])
+                if stock_info.get('delist_date'):
+                    stock_info['delist_date'] = stock_info['delist_date'].strftime("%Y-%m-%d") if hasattr(stock_info['delist_date'], 'strftime') else str(stock_info['delist_date'])
+
+                return stock_info
+            else:
+                return {
+                    "stock_code": stock_code,
+                    "error": "Stock not found"
+                }
+        except Exception as e:
+            self.logger.error(f"Failed to get stock info for {stock_code}: {e}")
+            return {
+                "stock_code": stock_code,
+                "error": str(e)
+            }
 
     async def execute_data_workflow(
         self,
@@ -1020,7 +1109,7 @@ class DataManagerService:
 
         return pd.DataFrame(data)
 
-    async def get_market_data(
+    async def get_market_data_batch(
         self,
         stock_codes: List[str],
         start_date: date,
@@ -1028,57 +1117,53 @@ class DataManagerService:
         data_type: str = "kdata"
     ) -> Dict[str, Any]:
         """
-        获取市场数据
+        批量获取市场数据
 
         提供标准的数据访问接口
         """
-        self.logger.info(f"获取市场数据: {len(stock_codes)}只股票, {start_date} - {end_date}")
+        self.logger.info(f"批量获取市场数据: {len(stock_codes)}只股票, {start_date} - {end_date}")
 
         try:
-            if not HIKYUU_AVAILABLE:
-                # 返回模拟数据
-                return {
-                    'success': True,
-                    'data': self._get_sample_data_for_quality_check(),
-                    'data_type': data_type,
-                    'stock_count': len(stock_codes),
-                    'date_range': [start_date.isoformat(), end_date.isoformat()]
-                }
-
-            # 实际的Hikyuu数据获取实现
-            sm = StockManager.instance()
-            query = Query(hk.Datetime(start_date), hk.Datetime(end_date))
-
             all_data = []
+            successful_stocks = 0
+            failed_stocks = 0
+
             for stock_code in stock_codes:
-                stock = sm.get_stock(stock_code)
-                if stock.valid:
-                    if data_type == "kdata":
-                        kdata = stock.get_kdata(query)
-                        # 转换为DataFrame格式
-                        for i in range(len(kdata)):
-                            record = kdata[i]
+                try:
+                    df = market_data_repository.get_market_data(stock_code, start_date, end_date)
+                    if not df.empty:
+                        # 转换为标准格式
+                        for _, row in df.iterrows():
                             all_data.append({
-                                'date': record.datetime.date(),
+                                'date': row['trade_date'],
                                 'stock_code': stock_code,
-                                'open': float(record.open),
-                                'close': float(record.close),
-                                'high': float(record.high),
-                                'low': float(record.low),
-                                'volume': int(record.volume)
+                                'open': float(row['open_price']),
+                                'close': float(row['close_price']),
+                                'high': float(row['high_price']),
+                                'low': float(row['low_price']),
+                                'volume': int(row['volume']),
+                                'amount': float(row['amount'])
                             })
+                        successful_stocks += 1
+                    else:
+                        failed_stocks += 1
+                except Exception as e:
+                    self.logger.warning(f"Failed to get data for {stock_code}: {e}")
+                    failed_stocks += 1
 
             return {
                 'success': True,
                 'data': pd.DataFrame(all_data),
                 'data_type': data_type,
                 'stock_count': len(stock_codes),
+                'successful_stocks': successful_stocks,
+                'failed_stocks': failed_stocks,
                 'date_range': [start_date.isoformat(), end_date.isoformat()],
                 'records_count': len(all_data)
             }
 
         except Exception as e:
-            self.logger.error(f"获取市场数据失败: {e}")
+            self.logger.error(f"批量获取市场数据失败: {e}")
             return {
                 'success': False,
                 'error': str(e),

@@ -42,6 +42,9 @@ from models.hikyuu_models import (
     FactorCalculationResult, create_factor_data_from_hikyuu
 )
 from models.audit_models import AuditEntry, AuditEventType
+from data.repository import factor_repository, stock_repository
+from data.hikyuu_interface import hikyuu_interface
+from lib.environment import env_manager, warn_mock_data
 
 
 class PlatformOptimizer:
@@ -623,27 +626,74 @@ class FactorCalculator:
         return batch_results
 
     def _get_stock_data(self, stock_code: str, request: FactorCalculationRequest) -> pd.DataFrame:
-        """获取股票数据"""
-        if not HIKYUU_AVAILABLE:
-            # 返回模拟数据
-            dates = pd.date_range(request.start_date, request.end_date, freq='D')
-            np.random.seed(hash(stock_code) % 2**32)  # 基于股票代码的固定随机种子
+        """获取股票数据。优先使用Hikyuu真实数据源。"""
+        try:
+            # 初始化Hikyuu接口
+            if not hikyuu_interface._initialized:
+                hikyuu_interface.initialize()
 
-            data = []
-            base_price = 10.0
-            for date in dates:
-                change = np.random.randn() * 0.02  # 2%的日波动
-                base_price *= (1 + change)
+            # 使用Hikyuu获取市场数据
+            market_data = hikyuu_interface.get_market_data(
+                stock_code,
+                request.start_date,
+                request.end_date
+            )
 
-                data.append({
-                    'date': date,
-                    'close': base_price,
-                    'open': base_price * (1 + np.random.randn() * 0.01),
-                    'high': base_price * (1 + abs(np.random.randn()) * 0.02),
-                    'low': base_price * (1 - abs(np.random.randn()) * 0.02),
-                    'volume': int(1000000 * (1 + np.random.randn() * 0.5)),
-                    'eps': 1.0 + np.random.randn() * 0.1,  # 模拟每股收益
-                    'bvps': 5.0 + np.random.randn() * 0.5,  # 模拟每股净资产
+            if not market_data.empty:
+                # 转换为因子计算所需的格式
+                data = market_data.copy()
+                data['date'] = data['trade_date']
+                data['close'] = data['close_price']
+                data['open'] = data['open_price']
+                data['high'] = data['high_price']
+                data['low'] = data['low_price']
+
+                # 模拟财务数据（实际中应该从财务数据库获取）
+                np.random.seed(hash(stock_code) % 2**32)
+                data['eps'] = 1.0 + np.random.randn(len(data)) * 0.1
+                data['bvps'] = 5.0 + np.random.randn(len(data)) * 0.5
+                data['net_income'] = data['eps'] * 1000000  # 模拟净利润
+                data['shareholders_equity'] = data['bvps'] * 1000000  # 模拟股东权益
+
+                return data
+            else:
+                # 如果没有数据，返回空 DataFrame
+                return pd.DataFrame()
+
+        except Exception as e:
+            self.logger.warning(f"使用Hikyuu获取{stock_code}数据失败: {e}，使用模拟数据")
+
+            # 降级到模拟数据
+            return self._get_mock_stock_data(stock_code, request)
+
+    def _get_mock_stock_data(self, stock_code: str, request: FactorCalculationRequest) -> pd.DataFrame:
+        """获取模拟股票数据"""
+        if env_manager.is_mock_data_allowed():
+            warn_mock_data(f"Using mock stock data for {stock_code} factor calculation")
+
+        dates = pd.date_range(request.start_date, request.end_date, freq='D')
+        np.random.seed(hash(stock_code) % 2**32)  # 基于股票代码的固定随机种子
+
+        data = []
+        base_price = 10.0
+        for date in dates:
+            change = np.random.randn() * 0.02  # 2%的日波动
+            base_price *= (1 + change)
+
+            data.append({
+                'date': date,
+                'close': base_price,
+                'open': base_price * (1 + np.random.randn() * 0.01),
+                'high': base_price * (1 + abs(np.random.randn()) * 0.02),
+                'low': base_price * (1 - abs(np.random.randn()) * 0.02),
+                'volume': int(1000000 * (1 + np.random.randn() * 0.5)),
+                'eps': 1.0 + np.random.randn() * 0.1,  # 模拟每股收益
+                'bvps': 5.0 + np.random.randn() * 0.5,  # 模拟每股净资产
+                'net_income': (1.0 + np.random.randn() * 0.1) * 1000000,
+                'shareholders_equity': (5.0 + np.random.randn() * 0.5) * 1000000
+            })
+
+        return pd.DataFrame(data)
                 })
 
             return pd.DataFrame(data)
@@ -702,7 +752,10 @@ class FactorStorage:
         self.config = config or {}
         self.logger = logging.getLogger(__name__)
 
-        # 存储配置
+        # 使用数据仓库层进行数据持久化
+        self.factor_repo = factor_repository
+
+        # 存储配置（保留用于本地缓存）
         self.storage_path = Path(self.config.get('storage_path', 'data/factors'))
         self.storage_format = self.config.get('storage_format', 'parquet')  # parquet, pickle, hdf5
         self.enable_compression = self.config.get('enable_compression', True)

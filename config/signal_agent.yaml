@@ -1,0 +1,158 @@
+# Signal Generation Agent Configuration
+# 信号生成Agent配置文件
+
+agent:
+  name: "signal_generation"
+  type: "signal_generation"
+  host: "0.0.0.0"
+  port: 8004
+  debug: false
+  enable_audit: true
+
+# 信号生成配置
+signal_generation:
+  # 信号生成器配置
+  signal_generator:
+    strategies:
+      momentum_v1:
+        factors:
+          momentum_20d: 0.4
+          rsi_14d: 0.3
+          volume_rate: 0.3
+        thresholds:
+          buy: 0.7
+          sell: 0.3
+          hold: [0.3, 0.7]
+
+      value_v1:
+        factors:
+          pe_ratio: 0.4
+          pb_ratio: 0.3
+          roe: 0.3
+        thresholds:
+          buy: 0.6
+          sell: 0.4
+          hold: [0.4, 0.6]
+
+  # 风险检查配置
+  risk_checker:
+    position_risk:
+      max_single_position: 0.10  # 10%
+      max_sector_exposure: 0.30  # 30%
+      max_total_positions: 50
+
+    liquidity_risk:
+      min_avg_volume: 1000000
+      min_market_cap: 1000000000  # 10亿
+
+    market_risk:
+      max_beta: 2.0
+      min_beta: 0.3
+      volatility_threshold: 0.6
+
+  # 人工确认配置
+  confirmation_manager:
+    required_for:
+      - "high_risk_signals"
+      - "large_positions"
+      - "sector_concentration"
+
+    timeout_hours: 4
+    escalation:
+      enabled: true
+      levels:
+        - "senior_trader"
+        - "risk_manager"
+        - "portfolio_manager"
+
+  # 审计记录配置
+  audit_logger:
+    detailed_logging: true
+    retention_days: 365
+    encryption_enabled: true
+
+# 策略执行配置
+strategy_execution:
+  execution_modes:
+    - "simulation"
+    - "paper_trading"
+    - "live_trading"
+
+  default_mode: "simulation"
+
+  # 执行参数
+  execution_params:
+    max_order_size: 100000  # 最大单笔金额
+    min_order_size: 1000    # 最小单笔金额
+    slippage_tolerance: 0.002  # 0.2%
+    timeout_seconds: 30
+
+# 信号监控配置
+signal_monitoring:
+  real_time_tracking: true
+  performance_tracking:
+    enabled: true
+    metrics:
+      - "fill_rate"
+      - "slippage"
+      - "execution_time"
+
+  alerts:
+    enabled: true
+    channels:
+      - "email"
+      - "webhook"
+    conditions:
+      - "high_slippage"
+      - "execution_failure"
+      - "risk_breach"
+
+# 数据源配置
+data_source:
+  factor_data:
+    path: "./data/factors"
+    format: "hdf5"
+  validation_results:
+    path: "./data/validation"
+    format: "json"
+
+# 数据库配置
+database:
+  url: "${DATABASE_URL}"
+  pool_size: 10
+
+# Redis缓存配置
+redis:
+  url: "${REDIS_URL}"
+  db: 3
+  ttl: 900  # 15 minutes
+
+# 外部服务配置
+external_services:
+  notification:
+    email:
+      smtp_server: "${SMTP_SERVER}"
+      smtp_port: 587
+      username: "${SMTP_USERNAME}"
+      password: "${SMTP_PASSWORD}"
+
+    webhook:
+      url: "${WEBHOOK_URL}"
+      timeout: 10
+
+# 日志配置
+logging:
+  level: "INFO"
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  file: "./logs/signal_generation.log"
+  max_size: "10MB"
+  backup_count: 5
+
+# 监控配置
+monitoring:
+  prometheus:
+    enabled: true
+    port: 9004
+  health_check:
+    interval: 30
+    timeout: 5

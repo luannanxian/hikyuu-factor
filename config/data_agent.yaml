@@ -1,0 +1,76 @@
+# Data Manager Agent Configuration
+# 数据管理Agent配置文件
+
+agent:
+  name: "data_manager"
+  type: "data_manager"
+  host: "0.0.0.0"
+  port: 8001
+  debug: false
+  enable_audit: true
+
+# 数据管理器配置
+data_manager:
+  # 数据更新器配置
+  updater:
+    data_sources:
+      - "hikyuu"
+    update_frequency: "daily"  # daily, hourly, realtime
+    retry_count: 3
+    max_workers: 10
+    batch_size: 100
+
+  # 质量检查器配置
+  quality_checker:
+    rules:
+      missing_data:
+        threshold: 0.05  # 5%缺失率阈值
+        action: "interpolate"  # interpolate, skip, alert
+      duplicate_data:
+        action: "remove"  # remove, keep_latest, alert
+      outlier_detection:
+        method: "iqr"  # iqr, zscore, isolation_forest
+        threshold: 3.0
+        action: "winsorize"  # winsorize, remove, alert
+
+  # 异常处理策略配置
+  exception_handler:
+    strategies:
+      missing_data: "interpolate"
+      outlier_data: "winsorize"
+      duplicate_data: "deduplicate"
+
+# Hikyuu数据源配置
+hikyuu:
+  data_dir: "./data/hikyuu"
+  stock_list_file: "./data/stock_list.csv"
+
+# 数据库配置
+database:
+  url: "${DATABASE_URL}"
+  pool_size: 10
+  max_overflow: 20
+  echo: false
+
+# Redis缓存配置
+redis:
+  url: "${REDIS_URL}"
+  db: 0
+  max_connections: 10
+
+# 日志配置
+logging:
+  level: "INFO"
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  file: "./logs/data_manager.log"
+  max_size: "10MB"
+  backup_count: 5
+
+# 监控配置
+monitoring:
+  prometheus:
+    enabled: true
+    port: 9001
+  health_check:
+    interval: 30  # seconds
+    timeout: 5    # seconds

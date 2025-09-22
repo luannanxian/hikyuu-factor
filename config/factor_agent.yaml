@@ -1,0 +1,105 @@
+# Factor Calculation Agent Configuration
+# 因子计算Agent配置文件
+
+agent:
+  name: "factor_calculation"
+  type: "factor_calculation"
+  host: "0.0.0.0"
+  port: 8002
+  debug: false
+  enable_audit: true
+
+# 因子计算配置
+factor_calculation:
+  # 计算引擎配置
+  engine:
+    platform_optimization: true
+    max_workers: 8
+    batch_size: 500
+    memory_limit: "8GB"
+    cache_enabled: true
+
+  # 因子注册管理配置
+  factor_registry:
+    builtin_factors:
+      momentum:
+        - "momentum_20d"
+        - "rsi_14d"
+      value:
+        - "pe_ratio"
+        - "pb_ratio"
+      quality:
+        - "roe"
+        - "debt_ratio"
+      volatility:
+        - "volatility_20d"
+        - "beta"
+
+  # 平台优化配置
+  platform_optimization:
+    apple_silicon:
+      enabled: true
+      neon_acceleration: true
+    x86_64:
+      enabled: true
+      avx_acceleration: true
+    cuda:
+      enabled: false
+      device_id: 0
+
+  # 因子计算参数
+  calculation:
+    lookback_period: 252  # 交易日
+    min_periods: 20
+    outlier_treatment:
+      method: "winsorize"
+      percentiles: [0.01, 0.99]
+    standardization:
+      method: "zscore"  # zscore, minmax, rank
+      rolling_window: 60
+
+# 数据源配置
+data_source:
+  hikyuu:
+    data_dir: "./data/hikyuu"
+    kdata_driver: "hdf5"
+    preload_data: true
+
+# 存储配置
+storage:
+  factor_data:
+    format: "hdf5"  # hdf5, parquet, csv
+    path: "./data/factors"
+    compression: "gzip"
+  metadata:
+    format: "json"
+    path: "./data/metadata"
+
+# 数据库配置
+database:
+  url: "${DATABASE_URL}"
+  pool_size: 10
+  max_overflow: 20
+
+# Redis缓存配置
+redis:
+  url: "${REDIS_URL}"
+  db: 1
+  ttl: 3600  # seconds
+
+# 日志配置
+logging:
+  level: "INFO"
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  file: "./logs/factor_calculation.log"
+  max_size: "10MB"
+  backup_count: 5
+
+# 监控配置
+monitoring:
+  prometheus:
+    enabled: true
+    port: 9002
+  performance:
+    profile_enabled: false
+    trace_enabled: false
